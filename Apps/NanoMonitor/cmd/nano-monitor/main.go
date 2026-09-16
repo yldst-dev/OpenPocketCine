@@ -9,7 +9,9 @@ import (
 	"net/netip"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+	"time"
 
 	"nanomonitor/internal/adapters/ffplay"
 	"nanomonitor/internal/adapters/nano"
@@ -22,6 +24,13 @@ func main() {
 	defer stop()
 	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(os.Stderr, "오류:", err)
+		if runtime.GOOS == "darwin" && (errors.Is(err, syscall.EHOSTUNREACH) || errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM)) {
+			fmt.Fprintln(os.Stderr, "macOS의 로컬 네트워크 허용 창이 나타날 수 있어 20초 동안 기다립니다. 허용 후 다시 실행해 주세요. 허용 창이 없다면 네트워크 경로도 확인해야 합니다.")
+			select {
+			case <-ctx.Done():
+			case <-time.After(20 * time.Second):
+			}
+		}
 		os.Exit(1)
 	}
 }

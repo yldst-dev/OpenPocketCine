@@ -79,8 +79,8 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 			return ctx.Err()
 		case <-time.After(400 * time.Millisecond):
 		}
-	} else if ctx.Err() != nil {
-		return ctx.Err()
+	} else {
+		return fmt.Errorf("카메라 TCP 초기 연결 실패: %w", tcpErr)
 	}
 	conn, err := net.DialUDP("udp4", &net.UDPAddr{IP: localIP}, &net.UDPAddr{IP: net.IP(c.Address.AsSlice()), Port: c.udpPort})
 	if err != nil {

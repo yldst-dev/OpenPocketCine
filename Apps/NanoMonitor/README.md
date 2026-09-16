@@ -70,6 +70,28 @@ just build
 ./bin/nano-monitor -camera 192.168.10.42
 ```
 
+On macOS, if the terminal executable is blocked from the LAN or never appears
+in Local Network settings, build and launch the app bundle:
+
+```sh
+just mac-run -interface en0 -camera 192.168.10.42
+```
+
+The bundle has a stable identifier and the Bluetooth/Local Network usage
+strings. Approve macOS's access prompt if shown. Logs are in `bin/monitor.log`.
+If the first attempt reports a route/permission error, it stays alive for
+20 seconds so macOS can present its prompt; allow access and run it again.
+That error can also indicate a real routing fault, so it is not proof of a
+permission denial. Initial TCP errors now stop startup rather than being
+hidden by a later UDP error.
+
+`mac-app` signs locally with an ad hoc signature by default. For reliable
+identity tracking across builds, set `NANO_CODESIGN_IDENTITY` to an installed
+Apple-issued signing identity. No identity is stored in the repository.
+See [Apple's local network privacy guidance](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy).
+`mac-run` requires FFplay on the terminal's PATH and passes its absolute path
+to the app. Close the existing viewer before starting another instance.
+
 To select a network interface and pin the camera's identity:
 
 ```sh
@@ -169,7 +191,8 @@ An optional FFmpeg/FFplay integration check opens a 10-second synthetic video:
 NANO_MONITOR_REAL_PLAYER=1 go test ./internal/adapters/ffplay -run '^TestActualFFplay$' -count=1 -v
 ```
 
-Physical Bluetooth discovery and a router-join request were exercised. The LAN
-verification failed with host-local route errors, so successful router joining,
-AP restoration and real camera playback remain unverified. The earlier Mac iPad-app
+Physical Bluetooth provisioning reached an accepted join response. The macOS
+app bundle subsequently verified the Nano identity over the router LAN. The
+camera rejected preview with status `0xd6`; real playback and AP restoration
+remain unverified. The earlier Mac iPad-app
 connection confirmation does not qualify this separate Go implementation.

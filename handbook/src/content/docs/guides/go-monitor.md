@@ -47,6 +47,18 @@ just nano-monitor-check
 just nano-monitor -camera 192.168.10.42
 ```
 
+If macOS blocks the bare executable, launch its app bundle from the module:
+
+```sh
+cd Apps/NanoMonitor
+just mac-run -interface en0 -camera 192.168.10.42
+```
+
+Allow Local Network access if prompted. The app keeps route/permission failures
+visible for 20 seconds; after granting access, run it again. Logs are saved to
+`bin/monitor.log`. Its README explains optional Apple-issued signing for stable
+permission tracking across builds. Do not run several viewers for one camera.
+
 For candidate discovery and an explicit network interface:
 
 ```sh

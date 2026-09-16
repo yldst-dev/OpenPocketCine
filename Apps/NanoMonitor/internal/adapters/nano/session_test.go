@@ -19,6 +19,7 @@ type testCamera struct {
 	mu       sync.Mutex
 	commands []frame
 	acks     int
+	packets  int
 	video    []byte
 }
 
@@ -56,6 +57,9 @@ func serveCamera(t *testing.T, name string, video []byte) *testCamera {
 			if err != nil {
 				return
 			}
+			fake.mu.Lock()
+			fake.packets++
+			fake.mu.Unlock()
 			p := buffer[:n]
 			if !validPacket(p) {
 				continue
@@ -189,5 +193,22 @@ func TestVerifyDoesNotStartPreview(t *testing.T) {
 		if f.set != 7 || f.id != 7 {
 			t.Fatal("identity check changed camera preview")
 		}
+	}
+}
+
+func TestSessionReturnsTCPFailureBeforeUDP(t *testing.T) {
+	fake := serveCamera(t, "OsmoNano-TEST", nil)
+	camera := fake.adapter()
+	fake.tcp.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	err := camera.Verify(ctx)
+	if err == nil || !strings.Contains(err.Error(), "TCP 초기 연결 실패") {
+		t.Fatalf("expected initial TCP failure, got %v", err)
+	}
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	if fake.packets != 0 {
+		t.Fatal("UDP session started after TCP failure")
 	}
 }

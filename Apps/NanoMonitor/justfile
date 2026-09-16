@@ -12,3 +12,21 @@ build:
 
 run *args:
     go run ./cmd/nano-monitor {{args}}
+
+mac-app: build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test "$(uname -s)" = Darwin
+    app="bin/Nano Monitor.app/Contents"
+    mkdir -p "$app/MacOS"
+    cp bin/nano-monitor "$app/MacOS/nano-monitor"
+    cp internal/adapters/bluetooth/Info.plist "$app/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Add :CFBundleExecutable string nano-monitor' "$app/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Add :CFBundlePackageType string APPL' "$app/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Add :CFBundleVersion string 1' "$app/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Add :CFBundleShortVersionString string 0.1.0' "$app/Info.plist"
+    /usr/libexec/PlistBuddy -c 'Add :LSUIElement bool true' "$app/Info.plist"
+    codesign --force --sign "${NANO_CODESIGN_IDENTITY:--}" "bin/Nano Monitor.app"
+
+mac-run *args: mac-app
+    open -n "{{justfile_directory()}}/bin/Nano Monitor.app" --stdout "{{justfile_directory()}}/bin/monitor.log" --stderr "{{justfile_directory()}}/bin/monitor.log" --args {{args}} -ffplay "$(command -v ffplay)"
