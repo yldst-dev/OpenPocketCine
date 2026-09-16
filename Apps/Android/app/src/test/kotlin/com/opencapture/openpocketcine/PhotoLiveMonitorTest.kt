@@ -18,8 +18,7 @@ class PhotoLiveMonitorTest {
 
         for (mode in listOf(
             CameraCommands.SHOOT_PHOTO,
-            CameraCommands.SHOOT_PHOTO_POCKET4,
-            CameraCommands.SHOOT_LIVE_PHOTO,
+            CameraCommands.SHOOT_PHOTO,
         )) {
             val photo = dlog2.copy(shootingMode = mode)
             assertTrue(photo.isPhoto)
@@ -37,7 +36,7 @@ class PhotoLiveMonitorTest {
         val photo =
             CameraStatus(
                 colorMode = CameraCommands.COLOR_DLOG2,
-                shootingMode = CameraCommands.SHOOT_PHOTO_POCKET4,
+                shootingMode = CameraCommands.SHOOT_PHOTO,
             )
         assertEquals(CameraCommands.COLOR_NORMAL, photo.monitorColorMode)
         assertEquals(
@@ -62,7 +61,7 @@ class PhotoLiveMonitorTest {
     fun photoCatalogKeepsGenericExtraCubes() {
         val photo =
             LutCatalog.djiEntries(
-                listOf("DJI_Official_Pocket4P_DLog2_Rec709_33.cube", "Film.cube"),
+                listOf("DJI_Official_Nano_DLogM_Rec709_33.cube", "Film.cube"),
                 isPhotoLive = true,
             )
         assertEquals(listOf("djiAuto", "asset:Film.cube"), photo.map { it.id })

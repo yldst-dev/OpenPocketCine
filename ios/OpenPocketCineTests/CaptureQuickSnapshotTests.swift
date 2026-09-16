@@ -24,7 +24,7 @@ final class CaptureQuickSnapshotTests: XCTestCase {
         for changed in changedStates {
             XCTAssertFalse(request == changed && changed.canConfirm)
         }
-        for photo in [0x05, 0x17] {
+        for photo in [0x05] {
             XCTAssertFalse(
                 RecordConfirmationContext(
                     mode: photo, recording: false, locked: false, busy: false, phase: .live
@@ -169,21 +169,23 @@ final class CaptureQuickSnapshotTests: XCTestCase {
         XCTAssertNil(format.changedValue(translation: -56, current: narrowed))
 
         status.colorMode = .normal
-        status.availableColorModes = [.normal, .hdr, .dLog]
-        let color = try XCTUnwrap(CaptureQuickSnapshot.primary(.color, status: status))
-        XCTAssertEqual(color.options, ["Normal", "HDR", "D-Log"])
-        XCTAssertEqual(color.selection, "Normal")
-        XCTAssertEqual(color.changedValue(translation: -56, current: color), "HDR")
+        status.availableColorModes = [.normal, .normal10, .dLogM]
+        let color = try XCTUnwrap(
+            CaptureQuickSnapshot.primary(.color, status: status, cameraModel: .default))
+        XCTAssertEqual(color.options, ["Normal 8-bit", "Normal 10-bit", "D-Log M 10-bit"])
+        XCTAssertEqual(color.selection, "Normal 8-bit")
+        XCTAssertEqual(color.changedValue(translation: -56, current: color), "Normal 10-bit")
 
         status.availableColorModes = [.normal]
-        let colorChanged = CaptureQuickSnapshot.primary(.color, status: status)
+        let colorChanged = CaptureQuickSnapshot.primary(
+            .color, status: status, cameraModel: .default)
         XCTAssertNil(color.changedValue(translation: -56, current: colorChanged))
 
         status.shootingMode = Int(ShootingMode.video.rawValue)
         let mode = try XCTUnwrap(CaptureQuickSnapshot.primary(.mode, status: status))
         XCTAssertEqual(
             mode.options, CaptureLists.operatorShootingModes(from: status).map(\.label))
-        XCTAssertFalse(mode.options.contains(ShootingMode.livePhoto.label))
+        XCTAssertFalse(mode.options.contains("Live Photo"))
         XCTAssertEqual(mode.selection, "Video")
         XCTAssertNil(mode.changedValue(translation: 0, current: mode))
         XCTAssertEqual(mode.changedValue(translation: -56, current: mode), "TimeLapse")
@@ -193,7 +195,7 @@ final class CaptureQuickSnapshotTests: XCTestCase {
         XCTAssertNil(mode.changedValue(translation: -56, current: photo))
         XCTAssertEqual(photo?.selection, "Photo")
 
-        status.shootingMode = Int(ShootingMode.photoRawPocket3AndNano)
+        status.shootingMode = Int(ShootingMode.photo.rawValue)
         let pocket3Photo = try XCTUnwrap(CaptureQuickSnapshot.primary(.mode, status: status))
         XCTAssertEqual(pocket3Photo.selection, "Photo")
 
@@ -205,7 +207,7 @@ final class CaptureQuickSnapshotTests: XCTestCase {
 
     func testPhotoHidesVideoFormatAndShutterAngle() throws {
         var status = CameraStatus()
-        status.shootingMode = Int(ShootingMode.photoRawPocket3AndNano)
+        status.shootingMode = Int(ShootingMode.photo.rawValue)
         status.expoMode = .manual
         status.shutterDenom = 50
         status.fps = 30
@@ -236,30 +238,6 @@ final class CaptureQuickSnapshotTests: XCTestCase {
         XCTAssertTrue(lowLightFormat.enabled)
         XCTAssertEqual(lowLightFormat.kind, .format)
         XCTAssertNotEqual(lowLightFormat.selection, "Photo")
-    }
-
-    func testLivePhotoUsesStillChromeAndHidesVideoColorAudio() throws {
-        var status = CameraStatus()
-        status.shootingMode = Int(ShootingMode.livePhoto.rawValue)
-        status.colorMode = .dLogM
-        status.audioChannel = .stereo
-        status.videoFormat = VideoFormat(resolution: .p4K, frameRate: .fps25)
-        status.availableVideoFormats = [
-            VideoFormat(resolution: .p4K, frameRate: .fps24)
-        ]
-        XCTAssertTrue(status.isPhoto)
-        XCTAssertNil(CaptureQuickSnapshot.primary(.color, status: status))
-        XCTAssertNil(CaptureQuickSnapshot.primary(.audio, status: status))
-        let format = try XCTUnwrap(CaptureQuickSnapshot.primary(.resolution, status: status))
-        XCTAssertEqual(format.selection, "Photo")
-        XCTAssertFalse(format.enabled)
-        let mode = try XCTUnwrap(CaptureQuickSnapshot.primary(.mode, status: status))
-        XCTAssertTrue(mode.options.contains(ShootingMode.livePhoto.label))
-        XCTAssertEqual(mode.selection, ShootingMode.livePhoto.label)
-        XCTAssertNil(mode.changedValue(translation: 0, current: mode))
-        status.shootingMode = Int(ShootingMode.video.rawValue)
-        let videoMode = try XCTUnwrap(CaptureQuickSnapshot.primary(.mode, status: status))
-        XCTAssertFalse(videoMode.options.contains(ShootingMode.livePhoto.label))
     }
 
     func testSlowMo200UsesAdvertisedCapabilityNotInvented240() throws {
@@ -369,7 +347,7 @@ final class CaptureQuickSnapshotTests: XCTestCase {
             CaptureQuickSnapshot.shutterReadout(
                 status: status, shutterUsesAngle: true, shutterAngleDegrees: synced ?? 180),
             "172°")
-        status.shootingMode = Int(ShootingMode.photoRawPocket3AndNano)
+        status.shootingMode = Int(ShootingMode.photo.rawValue)
         XCTAssertEqual(
             CaptureQuickSnapshot.shutterReadout(
                 status: status, shutterUsesAngle: true, shutterAngleDegrees: 180),

@@ -10,7 +10,9 @@ enum SavedCameraStore {
         guard let data = UserDefaults.standard.data(forKey: key),
             let decoded = try? JSONDecoder().decode([SavedCamera].self, from: data)
         else { return [] }
-        return SavedCameras.canonicalized(decoded)
+        return SavedCameras.canonicalized(decoded).filter {
+            CameraModel.resolve(modelId: $0.modelId, name: $0.modelName).family == .nano
+        }
     }
 
     static func save(_ records: [SavedCamera]) {

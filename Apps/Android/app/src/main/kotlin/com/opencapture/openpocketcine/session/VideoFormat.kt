@@ -214,22 +214,9 @@ data class VideoFormat(val resolution: VideoResolution, val frameRate: VideoFram
             return VideoFormat(res, rate)
         }
 
-        /**
-         * Picker list for the current shooting mode. A reported camcap table always
-         * wins, including SlowMo 4K240 when the body actually supplied it.
-         * Pocket 3 empty-table fallbacks are only the documented Video, SlowMo, and
-         * Low-Light pairs. TimeLapse / Hyperlapse stay empty until camcap arrives —
-         * Pocket 3 format menus there are UI-only, not accepted `0x02/0x18` writes.
-         */
+
         fun pickerFormats(available: List<VideoFormat>, model: CameraModel?, shootingMode: Int): List<VideoFormat> {
-            if (available.isNotEmpty()) return available
-            if (model == null || !CameraModel.looksLikePocket3(model.name)) return available
-            return when (shootingMode) {
-                CameraCommands.SHOOT_VIDEO -> pocket3VideoFormats
-                CameraCommands.SHOOT_SLOWMO -> pocket3SlowMoFormats
-                CameraCommands.SHOOT_SUPER_NIGHT -> pocket3LowLightFormats
-                else -> available
-            }
+            return available
         }
 
         /** Operator FORMAT SET. Empty picker tables are read-only, including Video. */
@@ -242,28 +229,6 @@ data class VideoFormat(val resolution: VideoResolution, val frameRate: VideoFram
             val legal = pickerFormats(available, model, shootingMode)
             return legal.isNotEmpty() && format in legal
         }
-
-        private val pocket3VideoFormats = listOf(
-            VideoResolution.P1080, VideoResolution.P2_7K, VideoResolution.P4K,
-            VideoResolution.P1080_1X1, VideoResolution.P2160_1X1, VideoResolution.P3K_1X1,
-            VideoResolution.P1080_9X16, VideoResolution.P2_7K_9X16, VideoResolution.P3K_9X16,
-        ).flatMap { res -> VideoFrameRate.labeledVideo.map { rate -> VideoFormat(res, rate) } }
-
-        /** Documented Pocket 3 SlowMo menu. 4K240 is not in this fallback. */
-        private val pocket3SlowMoFormats = listOf(
-            VideoFormat(VideoResolution.P4K, VideoFrameRate.FPS100),
-            VideoFormat(VideoResolution.P4K, VideoFrameRate.FPS120),
-            VideoFormat(VideoResolution.P2_7K, VideoFrameRate.FPS120),
-            VideoFormat(VideoResolution.P1080, VideoFrameRate.FPS120),
-            VideoFormat(VideoResolution.P1080, VideoFrameRate.FPS240),
-        )
-
-        /** Pocket 3 Low-Light (`0x28`): 1080/4K at 24/25/30. No 2.7K or square. */
-        private val pocket3LowLightFormats =
-            listOf(VideoResolution.P1080, VideoResolution.P4K).flatMap { res ->
-                listOf(VideoFrameRate.FPS24, VideoFrameRate.FPS25, VideoFrameRate.FPS30)
-                    .map { rate -> VideoFormat(res, rate) }
-            }
 
         /** iOS `CamCapVideoFormat.resolutions`. Preserve a reported size when camcap is empty. */
         fun resolutions(

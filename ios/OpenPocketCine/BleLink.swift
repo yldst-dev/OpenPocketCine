@@ -402,14 +402,11 @@ extension BleLink: CBCentralManagerDelegate {
                 modelId = BleAdvert.modelId([UInt8](mfr.dropFirst(2)))  // strip company id
             }
         }
-        // The Pocket 3 often sends no manufacturer data — fall back to the name.
-        let nameLooksDji =
-            (advName?.lowercased()).map { n in
-                ["osmo", "pocket", "nano", "dji", "action", "xtra", "edge"].contains {
-                    n.contains($0)
-                }
-            } ?? false
-        guard isDji || nameLooksDji else { return nil }
+        let brand = CameraBrand.of(address: nil, name: advName, djiCid: isDji)
+        guard CameraModel.resolve(modelId: modelId, name: advName, brand: brand).family == .nano
+        else {
+            return nil
+        }
         return FoundCamera(
             id: peripheral.identifier,
             name: advName ?? "DJI camera",

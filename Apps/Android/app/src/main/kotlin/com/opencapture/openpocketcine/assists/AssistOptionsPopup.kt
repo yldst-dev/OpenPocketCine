@@ -163,7 +163,7 @@ fun AssistOptionsPopup(
                         onExposure = { state.updateLutExposure(it) },
                         onArmLut = { state.armLut() },
                         colorMode = colorMode,
-                        family = model?.session?.connectedCamera?.model?.family ?: "pocket",
+                        family = model?.session?.connectedCamera?.model?.family ?: "nano",
                         cameraName = model?.session?.connectedCamera?.name,
                         isPhoto = isPhoto && !playback,
                     )

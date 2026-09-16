@@ -5,19 +5,25 @@
 default:
     @just --list
 
+nano-monitor-check:
+    cd Apps/NanoMonitor && just check
+
+nano-monitor *args:
+    cd Apps/NanoMonitor && just run {{args}}
+
 # ── Setup ──────────────────────────────────────────────────────────────────
 # Install the meta-check tools used by `just check` (macOS / Homebrew),
 # and enable the repo's git hooks (pre-commit secret scan + proprietary guard).
 # Node is required for the public handbook (`just handbook`).
 setup:
-    brew install node typos-cli editorconfig-checker lychee markdownlint-cli2 actionlint gitleaks swift-format xcodegen
+    brew install node go typos-cli editorconfig-checker lychee markdownlint-cli2 actionlint gitleaks swift-format xcodegen
     git config core.hooksPath .githooks
 
 # ── Meta checks (run today; mirrored in CI) ─────────────────────────────────
 # Run every repository quality check that this tree currently supports.
 # `swift-lint` is available as `just lint` after `just format`; the existing tree is not
 # yet fully swift-format clean, so it is not a merge gate.
-check: hygiene site-check testflight-notes android-play-notes typos lint-md check-links check-editorconfig lint-actions secrets sentry-test swift-test
+check: hygiene site-check testflight-notes android-play-notes typos lint-md check-links check-editorconfig lint-actions secrets sentry-test swift-test nano-monitor-check
 
 # Verify release reporting configuration without network or real credentials.
 sentry-test:

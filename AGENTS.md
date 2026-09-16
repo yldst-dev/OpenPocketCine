@@ -1,13 +1,14 @@
 # OpenPocketCine
 
-Open-source iOS + Android app to connect to and monitor DJI Osmo Pocket cameras —
-primarily **Osmo Pocket 4 / 4 Pro**, with Nano live view on AVC.
+Open-source iOS + Android app to connect to and monitor **DJI Osmo Nano** with AVC live view.
+Only Nano is a supported camera profile.
 
 ## Stack & paths
 
 - **Swift Package Manager / Swift** — portable protocol core (`Sources/OpenPocketViewCore/`).
 - **SwiftUI** — iOS/iPadOS shell (`ios/OpenPocketCine/`, XcodeGen).
 - **Jetpack Compose / Kotlin** — Android shell (`Apps/Android/`).
+- **Go** — independent, video-only LAN viewer (`Apps/NanoMonitor/`).
 - **just** — every repo task. Run `just` to list recipes. `just setup` on macOS.
 
 | Path | What |
@@ -16,6 +17,7 @@ primarily **Osmo Pocket 4 / 4 Pro**, with Nano live view on AVC.
 | `Tests/OpenPocketViewCoreTests/` | Core tests |
 | `ios/OpenPocketCine/` | SwiftUI shell |
 | `Apps/Android/` | Compose shell and adapters |
+| `Apps/NanoMonitor/` | Standalone Go module with an FFplay display adapter |
 | `Sources/OpenPocketCineAndroidFacade/` | Android JNI facade |
 | `docs/` | Engineering references |
 | `handbook/src/content/docs/` | Public docs site (apps, protocol, setup) |
@@ -67,6 +69,7 @@ primarily **Osmo Pocket 4 / 4 Pro**, with Nano live view on AVC.
 - `just check` — full repository quality gate.
 - `just native-check` — Swift lint/test plus iOS simulator build and tests.
 - `just android-check` — Gradle assembleDebug, unit tests, lint.
+- `just nano-monitor-check` — Go formatting, vet, race tests and binary build.
 - **physical:** operator-visible work is proven on a real iPhone or Android device for the platform changed. Simulator has no BLE or camera Wi-Fi. Compile-only is not done.
 
 ## Completion

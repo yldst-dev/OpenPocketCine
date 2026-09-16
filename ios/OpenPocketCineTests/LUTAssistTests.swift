@@ -56,77 +56,77 @@ final class LUTAssistTests: XCTestCase {
         XCTAssertEqual(assist.resolvedSource(), .off)
         XCTAssertFalse(assist.effects.needsGPUFeed)
 
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
     }
 
     func testAutoLUTFollowsPersistedLiveColorWhenOffline() {
         let live = LiveAssistState()
-        live.syncLUT(to: .dLog2)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        live.syncLUT(to: .dLogM)
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
 
         let offline = LiveAssistState()
-        XCTAssertEqual(offline.monitorColorMode, .dLog2)
-        XCTAssertEqual(offline.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(offline.monitorColorMode, .dLogM)
+        XCTAssertEqual(offline.resolvedSource(), .dji(.nanoDLogM))
         offline.togglePlayback(.lut)
         XCTAssertGreaterThanOrEqual(offline.playbackEffects.lutDimension, 2)
         XCTAssertTrue(offline.playbackEffects.needsGPUFeed)
     }
 
     func testPlaybackAutoDoesNotDropLogWhenLiveReportsRec709() {
-        XCTAssertEqual(PlaybackLUTColor.resolve(live: .normal, last: .dLog2), .dLog2)
-        let color = PlaybackLUTColor.resolve(live: .normal, last: .dLog2)
+        XCTAssertEqual(PlaybackLUTColor.resolve(live: .normal, last: .dLogM), .dLogM)
+        let color = PlaybackLUTColor.resolve(live: .normal, last: .dLogM)
         let assist = LiveAssistState()
         assist.syncLUT(to: color)
         assist.togglePlayback(.lut)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         XCTAssertGreaterThanOrEqual(assist.playbackEffects.lutDimension, 2)
     }
 
     func testClipColorGammaWinsAndDoesNotPersistOverLastLive() {
         XCTAssertEqual(
-            PlaybackLUTColor.resolve(clip: .dLog2, live: .normal, last: .dLog), .dLog2)
+            PlaybackLUTColor.resolve(clip: .dLogM, live: .normal, last: .dLogM), .dLogM)
         XCTAssertEqual(
-            PlaybackLUTColor.resolve(clip: .normal, live: .dLog2, last: .dLog2), .normal)
+            PlaybackLUTColor.resolve(clip: .normal, live: .dLogM, last: .dLogM), .normal)
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
         assist.adoptPlaybackColor(.normal)
         XCTAssertEqual(assist.monitorColorMode, .normal)
         XCTAssertEqual(
-            OperatorPrefs.lastMonitorColorMode, .dLog2,
+            OperatorPrefs.lastMonitorColorMode, .dLogM,
             "a Rec.709 clip must not overwrite last live log")
-        assist.adoptPlaybackColor(.dLog2)
+        assist.adoptPlaybackColor(.dLogM)
         assist.togglePlayback(.lut)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
     }
 
     func testLUTPickerAppearDoesNotReplaceClipAutoWithLiveSet() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
-        assist.adoptPlaybackColor(.dLog)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog))
-        assist.bindLUTPicker(live: .dLog2, inPlayback: true)
-        XCTAssertEqual(assist.monitorColorMode, .dLog)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog))
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
+        assist.adoptPlaybackColor(.dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        assist.bindLUTPicker(live: .dLogM, inPlayback: true)
+        XCTAssertEqual(assist.monitorColorMode, .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         XCTAssertEqual(
-            OperatorPrefs.lastMonitorColorMode, .dLog2,
+            OperatorPrefs.lastMonitorColorMode, .dLogM,
             "opening LUT in playback must not persist the live SET over the clip")
-        assist.bindLUTPicker(live: .dLog2, inPlayback: false)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        assist.bindLUTPicker(live: .dLogM, inPlayback: false)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
     }
 
     func testDisconnectedMediaLUTPickerKeepsClipAuto() {
         let assist = LiveAssistState()
         assist.syncLUT(to: .normal)
-        assist.adoptPlaybackColor(.dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        assist.adoptPlaybackColor(.dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         assist.gradesClip = true
         assist.bindLUTPicker(live: nil, inPlayback: false)
-        XCTAssertEqual(assist.monitorColorMode, .dLog2)
+        XCTAssertEqual(assist.monitorColorMode, .dLogM)
         XCTAssertEqual(
-            assist.resolvedSource(), .dji(.pocketDLog2),
+            assist.resolvedSource(), .dji(.nanoDLogM),
             "disconnected library has no camera inPlayback; clip color must still drive Auto")
         assist.gradesClip = false
         assist.bindLUTPicker(live: .normal, inPlayback: false)
@@ -175,7 +175,7 @@ final class LUTAssistTests: XCTestCase {
         XCTAssertEqual(assist.lutStatusLabel, "Mono")
         XCTAssertGreaterThanOrEqual(assist.effects.lutDimension, 2)
         XCTAssertFalse(assist.effects.lutRGBA.isEmpty)
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         XCTAssertEqual(assist.lutSelection, .creativeMono)
     }
 
@@ -194,8 +194,8 @@ final class LUTAssistTests: XCTestCase {
 
     func testLUTExposureNudgeSnapsAndRebuildsTheCube() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        guard BundledOfficialDJILUT.cube(.pocketDLog2) != nil else {
+        assist.syncLUT(to: .dLogM)
+        guard BundledOfficialDJILUT.cube(.nanoDLogM) != nil else {
             XCTFail("official D-Log2 cube must load from the app bundle")
             return
         }
@@ -218,8 +218,8 @@ final class LUTAssistTests: XCTestCase {
 
     func testExportCubeBakesExposureOnlyWhenAsked() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        guard BundledOfficialDJILUT.cube(.pocketDLog2) != nil else {
+        assist.syncLUT(to: .dLogM)
+        guard BundledOfficialDJILUT.cube(.nanoDLogM) != nil else {
             XCTFail("official D-Log2 cube must load from the app bundle")
             return
         }
@@ -246,37 +246,16 @@ final class LUTAssistTests: XCTestCase {
         XCTAssertEqual(restored.lutExposureStops, -2)
     }
 
-    func testAutoFollowsColorModeAndTeleZoom() {
-        let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log2 → Rec.709")
-
-        let tele = CamFov.colorMode(forZoom: 12, current: .dLog2)
-        XCTAssertEqual(tele, .dLog)
-        assist.syncLUT(to: tele)
-        XCTAssertEqual(assist.lutSelection, .djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog))
-
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-
-        assist.syncLUT(to: .normal)
-        XCTAssertEqual(assist.resolvedSource(), .off)
-        XCTAssertEqual(assist.lutStatusLabel, "Auto · Off")
-        XCTAssertTrue(assist.lutEnabled)
-    }
-
     func testManualSelectionDoesNotFollowColor() {
         let assist = LiveAssistState()
-        assist.selectLUT(.djiDLog)
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.lutSelection, .djiDLog)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog))
-        XCTAssertEqual(assist.lutStatusLabel, "D-Log → Rec.709")
+        assist.selectLUT(.djiDLogM)
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(assist.lutSelection, .djiDLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(assist.lutStatusLabel, "D-Log M → Rec.709")
 
         assist.selectLUT(.djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
     }
 
     func testManualCustomRec709SticksUntilAuto() throws {
@@ -286,27 +265,27 @@ final class LUTAssistTests: XCTestCase {
 
         let assist = LiveAssistState()
         assist.selectLUT(.customRec709)
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         XCTAssertEqual(assist.lutSelection, .customRec709)
         XCTAssertEqual(assist.resolvedSource(), .custom(.rec709))
 
         assist.selectLUT(.djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
     }
 
     func testChipToggleKeepsSelection() {
         let assist = LiveAssistState()
-        assist.selectLUT(.djiDLog2)
+        assist.selectLUT(.djiDLogM)
         assist.toggle(.lut)
         XCTAssertFalse(assist.lutEnabled)
-        XCTAssertEqual(assist.lutSelection, .djiDLog2)
-        XCTAssertEqual(assist.lutStatusLabel, "Off · D-Log2 → Rec.709")
+        XCTAssertEqual(assist.lutSelection, .djiDLogM)
+        XCTAssertEqual(assist.lutStatusLabel, "Off · D-Log M → Rec.709")
         XCTAssertEqual(assist.effects.lutDimension, 0)
         XCTAssertFalse(
             assist.effects.needsGPUFeed, "LUT off with no other GPU assist uses the HEVC layer")
         assist.toggle(.lut)
         XCTAssertTrue(assist.lutEnabled)
-        XCTAssertEqual(assist.lutSelection, .djiDLog2)
+        XCTAssertEqual(assist.lutSelection, .djiDLogM)
     }
 
     func testCustomSlotsAreIndependentAndAutoUsesThem() throws {
@@ -327,22 +306,22 @@ final class LUTAssistTests: XCTestCase {
         XCTAssertEqual(OperatorPrefs.customFileName(for: .rec709), "opc-test-rec709.cube")
 
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog)
+        assist.syncLUT(to: .dLogM)
         XCTAssertEqual(assist.lutSelection, .djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         assist.selectLUT(.customFile)
         OperatorPrefs.selectedCustomFileName = "opc-test-dlog.cube"
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         XCTAssertEqual(assist.resolvedSource(), .file("opc-test-dlog.cube"))
         assist.selectLUT(.djiAuto)
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         assist.syncLUT(to: .normal)
         XCTAssertEqual(assist.resolvedSource(), .off)
     }
 
     func testOfficialCubesParseAsSize33() throws {
-        for lut in OfficialPocketLUT.allCases {
+        for lut in OfficialDJILUT.allCases {
             let url = officialCubeURL(lut.fileName)
             let text = try String(contentsOf: url, encoding: .utf8)
             let cube = try CubeLUT.parse(text)
@@ -365,11 +344,11 @@ final class LUTAssistTests: XCTestCase {
     func testArmedDJIAutoDLog2BindsOfficialCube() {
         let assist = LiveAssistState()
         assist.selectLUT(.djiAuto)
-        assist.syncLUT(to: .dLog2, family: .pocket, cameraName: "Osmo Pocket 4 Pro")
+        assist.syncLUT(to: .dLogM, family: .nano, cameraName: "Osmo Nano")
         XCTAssertEqual(assist.lutSelection, .djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log2 → Rec.709")
-        guard BundledOfficialDJILUT.cube(.pocketDLog2) != nil else {
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log M → Rec.709")
+        guard BundledOfficialDJILUT.cube(.nanoDLogM) != nil else {
             XCTFail("official DJI D-Log2 cube must load from the app bundle")
             return
         }
@@ -378,25 +357,14 @@ final class LUTAssistTests: XCTestCase {
         XCTAssertTrue(assist.effects.needsGPUFeed)
     }
 
-    func testOfficialDLog2CubeMovesMidGrey() throws {
-        let cube = try officialCube(.dLog2ToRec709)
-        let g = Float(MonitorTransfer.dlog2.middleGrayEncoded)
-        let out = cube.map(red: g, green: g, blue: g)
-        XCTAssertGreaterThan(abs(out.red - g), 0.01, "18% D-Log2 must not be identity")
-        XCTAssertGreaterThan(abs(out.green - g), 0.01)
-        XCTAssertGreaterThan(abs(out.blue - g), 0.01)
-        let black = cube.map(red: 0.0626, green: 0.0626, blue: 0.0626)
-        XCTAssertLessThan(black.red, 0.04, "log black must become a real Rec.709 black")
-    }
-
     func testArmedAutoDLog2BindsOfficialCube() {
         let assist = LiveAssistState()
         XCTAssertTrue(assist.lutEnabled)
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         XCTAssertEqual(assist.lutSelection, .djiAuto)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log2 → Rec.709")
-        guard BundledOfficialDJILUT.cube(.pocketDLog2) != nil else {
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log M → Rec.709")
+        guard BundledOfficialDJILUT.cube(.nanoDLogM) != nil else {
             XCTFail("official D-Log2 cube must load from the app bundle")
             return
         }
@@ -407,58 +375,33 @@ final class LUTAssistTests: XCTestCase {
 
     func testPhotoLiveViewBypassesStaleLogAndRestoresVideo() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
         XCTAssertEqual(assist.lutSelection, .djiAuto)
         XCTAssertTrue(assist.lutEnabled)
 
-        assist.syncLUT(to: .dLog2, isPhoto: true)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.monitorColorMode, .normal)
         XCTAssertEqual(assist.effects.colorMode, .normal)
         XCTAssertEqual(assist.resolvedSource(), .off)
         XCTAssertEqual(assist.lutStatusLabel, "Auto · Rec.709")
         XCTAssertEqual(assist.lutSelection, .djiAuto)
         XCTAssertTrue(assist.lutEnabled)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
         XCTAssertEqual(assist.effects.lutDimension, 0)
 
-        assist.syncLUT(to: .dLog2, isPhoto: false)
-        XCTAssertEqual(assist.monitorColorMode, .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log2 → Rec.709")
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
-    }
-
-    func testLivePhotoMatchesPhotoRec709() {
-        let assist = LiveAssistState()
-        assist.syncLUT(to: .dLogM, isPhoto: true)
-        XCTAssertEqual(assist.monitorColorMode, .normal)
-        XCTAssertEqual(assist.resolvedSource(), .off)
-        XCTAssertEqual(
-            LiveMonitorColorScience.colorMode(isPhoto: true, colorMode: .dLog2), .normal)
-        XCTAssertEqual(
-            LiveMonitorColorScience.transfer(isPhoto: true, colorMode: .dLog2), .rec709)
-        var status = CameraStatus()
-        status.colorMode = .dLog2
-        status.shootingMode = Int(ShootingMode.livePhoto.rawValue)
-        XCTAssertTrue(status.isPhoto)
-        XCTAssertEqual(
-            LiveMonitorColorScience.colorMode(isPhoto: status.isPhoto, colorMode: status.colorMode),
-            .normal)
-        status.shootingMode = Int(ShootingMode.photoRawPocket3AndNano)
-        XCTAssertTrue(status.isPhoto)
-        status.shootingMode = Int(ShootingMode.video.rawValue)
-        XCTAssertFalse(status.isPhoto)
-        XCTAssertEqual(
-            LiveMonitorColorScience.colorMode(isPhoto: status.isPhoto, colorMode: status.colorMode),
-            .dLog2)
+        assist.syncLUT(to: .dLogM, isPhoto: false)
+        XCTAssertEqual(assist.monitorColorMode, .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(assist.lutStatusLabel, "Auto · D-Log M → Rec.709")
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
     }
 
     func testPhotoKeepsCreativeAndGenericCustom() throws {
         let assist = LiveAssistState()
         assist.selectLUT(.creativeWarm)
-        assist.syncLUT(to: .dLog2, isPhoto: true)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.lutSelection, .creativeWarm)
         XCTAssertEqual(assist.resolvedSource(), .creative(.warm))
         XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, nil)
@@ -467,7 +410,7 @@ final class LUTAssistTests: XCTestCase {
         defer { try? CustomLUTStore.clear(.rec709) }
         _ = try CustomLUTStore.importFile(from: cube, into: .rec709)
         assist.selectLUT(.customRec709)
-        assist.syncLUT(to: .dLog2, isPhoto: true)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.lutSelection, .customRec709)
         XCTAssertEqual(assist.resolvedSource(), .custom(.rec709))
         assist.selectCustomFile("opc-test-photo-rec709.cube")
@@ -477,102 +420,59 @@ final class LUTAssistTests: XCTestCase {
 
     func testPhotoBypassesManualTechnicalAndCustomLogSlots() throws {
         let assist = LiveAssistState()
-        assist.selectLUT(.djiDLog2)
-        assist.syncLUT(to: .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        assist.syncLUT(to: .dLog2, isPhoto: true)
-        XCTAssertEqual(assist.lutSelection, .djiDLog2)
+        assist.selectLUT(.djiDLogM)
+        assist.syncLUT(to: .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        assist.syncLUT(to: .dLogM, isPhoto: true)
+        XCTAssertEqual(assist.lutSelection, .djiDLogM)
         XCTAssertEqual(assist.resolvedSource(), .off)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
 
         let dlog = try writeTempCube(named: "opc-test-photo-dlog.cube")
         defer { try? CustomLUTStore.clear(.dLog) }
         _ = try CustomLUTStore.importFile(from: dlog, into: .dLog)
         assist.selectLUT(.customDLog)
-        assist.syncLUT(to: .dLog, isPhoto: true)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.lutSelection, .customDLog)
         XCTAssertEqual(assist.resolvedSource(), .off)
         XCTAssertEqual(LUTSelection.djiCatalog(isPhotoLive: true), [.djiAuto])
         XCTAssertEqual(LUTSelection.djiCatalog(isPhotoLive: false), LUTSelection.djiCases)
-        XCTAssertEqual(LUTAssist.photoRec709Caption, "Photo live view is Rec.709 — log conversions are off")
+        XCTAssertEqual(
+            LUTAssist.photoRec709Caption, "Photo live view is Rec.709 — log conversions are off")
     }
 
     func testPlaybackClipColorWinsWhileCameraStaysPhoto() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
-        assist.syncLUT(to: .dLog2, isPhoto: true)
+        assist.syncLUT(to: .dLogM)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.resolvedSource(), .off)
         assist.gradesClip = true
-        assist.adoptPlaybackColor(.dLog2)
+        assist.adoptPlaybackColor(.dLogM)
         XCTAssertFalse(assist.liveIsPhoto)
-        XCTAssertEqual(assist.monitorColorMode, .dLog2)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
+        XCTAssertEqual(assist.monitorColorMode, .dLogM)
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
         assist.bindLUTPicker(live: .normal, inPlayback: true, isPhoto: true)
-        XCTAssertEqual(assist.resolvedSource(), .dji(.pocketDLog2))
+        XCTAssertEqual(assist.resolvedSource(), .dji(.nanoDLogM))
         assist.gradesClip = false
-        assist.syncLUT(to: .dLog2, isPhoto: true)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
         XCTAssertEqual(assist.resolvedSource(), .off)
         XCTAssertEqual(assist.lutSelection, .djiAuto)
     }
 
     func testPhotoDoesNotMutateSavedLUTPrefs() {
         let assist = LiveAssistState()
-        assist.selectLUT(.djiDLog)
-        assist.syncLUT(to: .dLog2)
+        assist.selectLUT(.djiDLogM)
+        assist.syncLUT(to: .dLogM)
         XCTAssertTrue(assist.lutEnabled)
-        assist.syncLUT(to: .dLog2, isPhoto: true)
-        XCTAssertEqual(assist.lutSelection, .djiDLog)
+        assist.syncLUT(to: .dLogM, isPhoto: true)
+        XCTAssertEqual(assist.lutSelection, .djiDLogM)
         XCTAssertTrue(assist.lutEnabled)
-        XCTAssertEqual(OperatorPrefs.lutSelection, .djiDLog)
+        XCTAssertEqual(OperatorPrefs.lutSelection, .djiDLogM)
         let restored = LiveAssistState()
-        XCTAssertEqual(restored.lutSelection, .djiDLog)
+        XCTAssertEqual(restored.lutSelection, .djiDLogM)
         XCTAssertTrue(restored.lutEnabled)
-        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLog2)
-    }
-
-    func testOfficialDLog2BakeKeepsRec709Codes() throws {
-        guard let device = MTLCreateSystemDefaultDevice() else {
-            throw XCTSkip("Metal required")
-        }
-        let cube = try officialCube(.dLog2ToRec709)
-        let g = Float(MonitorTransfer.dlog2.middleGrayEncoded)
-        let expected = cube.map(red: g, green: g, blue: g)
-        let code = UInt8(clamping: Int((Double(g) * 255).rounded()))
-        let source = Self.solidImage(code: code)
-        var fx = LiveImageEffects()
-        fx.lutDimension = cube.size
-        fx.lutRGBA = cube.rgbaComponents.withUnsafeBytes { Data($0) }
-        let graded = LiveMonitorCompositor.apply(to: source, effects: fx)
-
-        let baker = FeedFrameBaker(device: device)
-        let drawable = CGSize(width: 32, height: 32)
-        let done = expectation(description: "bake")
-        baker.scheduleBake(
-            image: graded, drawableSize: drawable, pixelFormat: .bgra8Unorm
-        ) {
-            done.fulfill()
-        }
-        wait(for: [done], timeout: 2)
-        guard let texture = baker.bakedTexture(for: drawable, pixelFormat: .bgra8Unorm) else {
-            XCTFail("baker must publish the LUT texture")
-            return
-        }
-        defer { baker.releaseBakedTexture(texture) }
-        guard
-            let wrapped = CIImage(
-                mtlTexture: texture, options: LiveMonitorWorkingSpace.imageOptions)
-        else {
-            XCTFail("CIImage(mtlTexture:) must wrap the bake")
-            return
-        }
-        let sample = Self.sampleRGB(wrapped)
-        XCTAssertEqual(sample.0, expected.red, accuracy: 0.06)
-        XCTAssertEqual(sample.1, expected.green, accuracy: 0.06)
-        XCTAssertEqual(sample.2, expected.blue, accuracy: 0.06)
-        XCTAssertGreaterThan(
-            abs(sample.0 - 0.64), 0.12,
-            "DeviceRGB re-encode of the cube output looks like uncorrected log")
+        XCTAssertEqual(OperatorPrefs.lastMonitorColorMode, .dLogM)
     }
 
     private func writeTempCube(named fileName: String) throws -> URL {
@@ -592,7 +492,7 @@ final class LUTAssistTests: XCTestCase {
         return url
     }
 
-    private func officialCube(_ lut: OfficialPocketLUT) throws -> CubeLUT {
+    private func officialCube(_ lut: OfficialDJILUT) throws -> CubeLUT {
         try CubeLUT.parse(String(contentsOf: officialCubeURL(lut.fileName), encoding: .utf8))
     }
 

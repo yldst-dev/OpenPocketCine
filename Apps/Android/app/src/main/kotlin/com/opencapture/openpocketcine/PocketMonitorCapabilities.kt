@@ -5,13 +5,12 @@ import com.opencapture.openpocketcine.session.CameraStatus
 
 /** The existing adapter remains the only authority for body-specific features. */
 internal fun AppModel.monitorCapabilities(status: CameraStatus): MonitorCapabilities {
-    val body = session.connectedCamera?.model
     return MonitorCapabilities(
-        gimbal = session.hasGimbal,
-        zoom = body?.activeZoomStops(status.resolutionCode, status.shootingMode)?.isNotEmpty() == true,
-        focus = body?.supportsFocusMode == true,
+        gimbal = false,
+        zoom = false,
+        focus = false,
         audio = true,
-        headTracking = session.hasGimbal,
+        headTracking = false,
         clipDelete = true,
         clipStar = true,
         requiresInternetHop = true,

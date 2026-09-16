@@ -168,7 +168,7 @@ struct WatchRelayProtocolTests {
             status: status, phase: .live, cameraName: "Pocket", feedLive: true)
         #expect(state.isPhotography)
 
-        status.shootingMode = Int(ShootingMode.photoRawPocket3AndNano)
+        status.shootingMode = Int(ShootingMode.photo.rawValue)
         let pocket3 = WatchRelayState.snapshot(
             status: status, phase: .live, cameraName: "Pocket 3", feedLive: true)
         #expect(pocket3.isPhotography)

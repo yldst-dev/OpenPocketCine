@@ -792,21 +792,7 @@ fun LiveViewScreen(model: AppModel) {
                 )
             }
 
-            if (chromeInteractive &&
-                showGimbalButton &&
-                model.liveGimbalPanel == LiveGimbalPanel.SHEET &&
-                !uiLocked
-            ) {
-                LiveGimbalSheetHost(
-                    model = model,
-                    layout = layout,
-                    cluster = cluster,
-                    safeLeading = safeLeading,
-                    safeTrailing = safeTrailing,
-                    safeTop = safeTop,
-                    safeBottom = safeBottom,
-                )
-            }
+
 
             val configure = assist.configureTool
             if (chromeInteractive && configure != null && !uiLocked && model.liveOperatorPanel == null) {
@@ -1374,48 +1360,9 @@ internal fun LandscapeChrome(
                 onDialEnd = model.session::endZoomPinch,
             )
         }
-        if (!captureOpen && capabilities.gimbal &&
-            model.chromeSectionMounts(PocketDispSection.GIMBAL_STICK) &&
-            !gimbalButton.isEmpty
-        ) {
-            LiveGimbalButton(
-                locked = uiLocked,
-                onClick = {
-                    model.liveGimbalPanel =
-                        if (model.liveGimbalPanel == LiveGimbalPanel.SHEET) LiveGimbalPanel.NONE
-                        else LiveGimbalPanel.SHEET
-                },
-                modifier =
-                    Modifier
-                        .liveModuleFrame(gimbalButton)
-                        .alpha(if (uiLocked) 0.4f else 1f),
-            )
-        }
-        if (capabilities.gimbal && model.chromeSectionMounts(PocketDispSection.GIMBAL_STICK) && !stick.isEmpty) {
-            Box(Modifier.liveModuleFrame(stick).alpha(if (captureOpen) 0f else 1f).chromeEditStroke(editing != null, true)) {
-                LiveGimbalStick(
-                    enabled = !captureOpen && !uiLocked && model.liveOperatorPanel == null && hits,
-                    onMove = model::updateGimbalStick,
-                    onRelease = model::endGimbalStick,
-                    onRecenter = { model.session.recenterGimbal() },
-                    onFlip = { model.session.flipGimbal() },
-                )
-            }
-        }
-        if (!captureOpen && capabilities.gimbal &&
-            model.chromeSectionMounts(PocketDispSection.GIMBAL_STICK) &&
-            hits &&
-            !uiLocked &&
-            model.liveOperatorPanel == null
-        ) {
-            LiveGimbalOverlay(
-                model = model,
-                layout = layout,
-                feed = layout.onFeed,
-                joystickBounds = stick,
-                uiLocked = uiLocked,
-            )
-        }
+
+
+
         if (!uiLocked && focusOffCenter && hits) {
             Box(Modifier.liveModuleFrame(layout.focusReset)) {
                 LiveFocusResetButton(onClick = onFocusReset)
@@ -1474,7 +1421,7 @@ private fun LiveTopDeck(
 ) {
     val config = LocalConfiguration.current
     val topFont = if (minOf(config.screenWidthDp, config.screenHeightDp) >= 600) 18f else 16f
-    val family = model.session.connectedCamera?.model?.family ?: "pocket"
+    val family = model.session.connectedCamera?.model?.family ?: "nano"
     val context = LocalContext.current
     val quickLifetime = rememberCaptureQuickLifetime(model)
     val gestureOwner = remember { MonitorQuickGestureOwner() }

@@ -216,11 +216,11 @@ class OperatorSetupContractTest {
         assertEquals("512 B", formatCacheSize(512))
         assertEquals("Auto · Off", lutLookLabel("auto"))
         assertEquals(
-            "Auto · D-Log2 → Rec.709",
-            lutLookLabel("auto", colorMode = CameraCommands.COLOR_DLOG2),
+            "Auto · D-Log M → Rec.709",
+            lutLookLabel("auto", colorMode = CameraCommands.COLOR_DLOG_M),
         )
-        assertEquals("Off · Auto", lutLookLabel("auto", enabled = false, colorMode = CameraCommands.COLOR_DLOG2))
-        assertEquals("D-Log2 → Rec.709", lutLookLabel("officialDLog2"))
+        assertEquals("Off · Auto", lutLookLabel("auto", enabled = false, colorMode = CameraCommands.COLOR_DLOG_M))
+        assertEquals("D-Log M → Rec.709", lutLookLabel("djiDLogM"))
         assertEquals("Off", lutLookLabel("off"))
         assertEquals("Look", lutLookLabel("custom:Look.cube"))
         assertTrue(lutPickerAvailable())

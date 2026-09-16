@@ -1163,7 +1163,7 @@ extension CameraSession {
 
     private var usesSingleSdStorage: Bool {
         if status.internalTotalMb == 0 { return true }
-        return connectedCamera?.model.name.localizedCaseInsensitiveContains("Pocket 3") == true
+        return false
     }
 
     private var isLivePhase: Bool {

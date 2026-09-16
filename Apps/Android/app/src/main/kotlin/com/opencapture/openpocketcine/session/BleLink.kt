@@ -369,13 +369,8 @@ class BleLink(context: Context) {
                 if (decoded >= 0) modelId = decoded
             }
         }
-        val nameLooksDji =
-            name?.lowercase()?.let { n ->
-                listOf("osmo", "pocket", "nano", "dji", "action", "xtra", "edge").any { n.contains(it) }
-            } == true
-        if (!isDji && !nameLooksDji) return null
-        // Read the MAC before resolving: its OUI is what identifies an Xtra rebrand, which
-        // advertises the same model id as the DJI original but speaks 10004 with no poke.
+        if (modelId != null && modelId != 0x0019) return null
+        if (modelId == null && !CameraModel.looksLikeNano(name.orEmpty())) return null
         val address = result.device.address ?: return null
         val model =
             if (SwiftCore.isAvailable) {
@@ -384,6 +379,7 @@ class BleLink(context: Context) {
             } else {
                 CameraModel.default.copy(name = name ?: CameraModel.default.name)
             }
+        if (address.uppercase().startsWith("EC:9E:EA") || model.family != "nano") return null
         val id = UUID.nameUUIDFromBytes("ble:$address".toByteArray()).toString()
         return FoundCamera(
             id = id,

@@ -421,18 +421,13 @@ class DatalinkDriver internal constructor(
         Log.i(TAG, "datalink: subscribe settled ${timeoutMs}ms status=$status")
     }
 
-    fun startLiveView(receiver: Int = CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_POCKET) {
-        val extra = receiver.toString()
-        if (receiver == CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_POCKET) {
-            sendCommand(SwiftCore.CMD_LIVE_VIEW_ENABLE, extra)
-        } else {
-            sendDuml(
-                cmdSet = 0x09,
-                cmdId = CameraCommands.CMD_LIVE_VIEW,
-                payload = CameraCommands.liveViewEnablePayload(),
-                receiver = receiver,
-            )
-        }
+    fun startLiveView(receiver: Int = CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_NANO) {
+        sendDuml(
+            cmdSet = 0x09,
+            cmdId = CameraCommands.CMD_LIVE_VIEW,
+            payload = CameraCommands.liveViewEnablePayload(),
+            receiver = receiver,
+        )
         lastEnableSentElapsed.set(SystemClock.elapsedRealtime())
         Log.i(
             TAG,

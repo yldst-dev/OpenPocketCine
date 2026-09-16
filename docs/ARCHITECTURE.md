@@ -1,6 +1,8 @@
 # Architecture
 
-OpenPocketCine is a shared Swift business/protocol core with native platform shells.
+OpenPocketCine is a shared Swift business/protocol core with native platform shells
+for Osmo Nano. The camera resolver and both BLE scanners admit only Nano; shared
+transport, image processing, playback and presentation utilities remain reusable.
 
 | Layer | Path | Purpose |
 | --- | --- | --- |
@@ -205,6 +207,30 @@ screens and workflows without copying them.
 
 ## Connection spine
 
+### Independent Go viewer
+
+`Apps/NanoMonitor/` is a separate Go module and composition root. It does not
+link the Swift core or either mobile shell. Its domain contains access-unit
+bounds and recovery decisions; its application owns the camera/display ports
+and bounded handoff; its adapters own DUML networking, Nano AVC parsing, LAN
+discovery and the FFplay process. Only the composition root selects concrete
+adapters. The Go module has no external Go packages.
+
+The setup use case owns provisioning and identity-verified LAN location ports.
+Its domain validates network credentials; the Nano adapter owns pairing and
+station-mode DUML, while a thin macOS Objective-C/cgo adapter owns CoreBluetooth.
+Native secure dialogs supply credentials without a password flag or cache.
+The viewer can also use a camera whose provisioning has already finished.
+It reads and validates the camera name on the selected LAN endpoint before
+registration and preview. It sends no shooting-setting, recording or media
+commands. The Nano adapter owns recovery: the watchdog permits bounded picture requests,
+then the stream wrapper permits at most 2 fresh identity-pinned sessions without
+closing the display channel. It does not retry identity or arbitrary failures.
+The narrower desktop scope and pending physical qualification are recorded in
+[parity](PARITY.md#local-mac-validation).
+
+### Mobile connection
+
 1. BLE scan and pair (GATT FFF0).
 2. Read camera Wi-Fi credentials.
 3. Join SoftAP `192.168.2.1`. On-path only after DHCP `192.168.2.2…254`
@@ -213,7 +239,7 @@ screens and workflows without copying them.
    the remote only. Bind and ACK details: [live-session](live-session.md).
 5. Enable live view **enable-once** after path + display are ready. Arm pktType
    `0x02` ingest on that write. Recover policy: [watchdog](feed-watchdog.md).
-6. Pocket 4 / 4 Pro: HEVC 720p. Nano: AVC/H.264 High 720p. Decoder setup and
+6. Nano: AVC/H.264 High 720p. Decoder setup and
    NAL latch: [live-session](live-session.md).
 
 ### Policy in Swift, I/O in the shells

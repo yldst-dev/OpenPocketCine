@@ -1,0 +1,65 @@
+---
+title: Osmo Nano
+description: Supported camera profile and controls for the Nano-only branch.
+---
+
+This branch supports **DJI Osmo Nano only** on iOS and Android. Pocket, Action,
+360, drone and Xtra profiles are excluded from discovery and connection. Older
+protocol surveys and release notes remain historical references.
+
+## Connection and picture
+
+Pair over Bluetooth, read the camera Wi-Fi credentials, join its Wi-Fi and open
+the UDP datalink. Nano uses model ID `0x0019`, live-enable receiver `0x41`, and
+its `0x02/0x09` live-view gate. Enable-once and watchdog recovery are retained.
+The AVC stream still uses length-based assembly across transport groups and
+the private metadata handling described in [Live view](../protocol/live-view/).
+
+Saved non-Nano cameras do not appear in the connection list. Nano credentials
+remain in the existing platform credential stores. Renamed Nano cameras can be
+recognized by their model ID; an unknown model is not assumed to be Nano.
+
+## Controls and looks
+
+- Video recording and Photo shutter control remain available.
+- Photo uses `0x05`; Pocket photo `0x17` and Live Photo `0x4D` are not offered.
+- Format changes require the camera's reported capability table.
+- Color options are Normal 8-bit, Normal 10-bit and D-Log M.
+- The bundled manufacturer conversion is Nano D-Log M to Rec.709.
+- Creative looks, imported LUTs, monitoring assists and media playback remain.
+- Nano has no gimbal, autofocus or camera zoom controls.
+
+Application and package identifiers remain OpenPocketCine so the existing
+platform builds and saved Nano settings continue to use the same identifiers.
+
+## Verification
+
+Run `just check`, `just native-check` and `just android-check`. Before release,
+verify pairing, reconnect, AVC picture, recording start/stop, Photo and color
+changes with a physical Nano and a real phone for each platform. Simulator and
+unit tests cannot prove the Bluetooth or camera Wi-Fi path.
+
+Physical phone regression of this Nano-only branch is pending. Earlier
+multi-model qualification does not qualify this refactor.
+
+## Local Mac validation
+
+An Apple silicon Mac can run a locally signed iPad build. This path is
+experimental. It needs Bluetooth and local network permission. When the app
+reaches Join camera Wi-Fi, select the matching Nano network in the macOS Wi-Fi
+menu. Check the network name and password on the camera under Wireless
+Connection, then return to the app. It waits for the camera subnet before
+opening the video link. This manual path does not need the iOS Hotspot
+Configuration entitlement; the normal iPhone build still uses that capability.
+
+Keep the camera attached to the vision dock for the first pairing and approve
+any pairing request on its screen. Complete first-use activation in DJI Mimo
+before testing, then disconnect Mimo so it does not hold the camera session.
+On 2026-09-16, Nano discovery was observed in the local Mac app and the operator
+confirmed a successful physical connection. Recording, Photo, reconnect and
+sustained live-view performance still need separate verification.
+
+The Mac path does not automatically verify the target Wi-Fi name. If the Mac is
+already connected to another camera, disconnect that network before selecting
+the Nano in the app. Use this experimental path with 1 camera. Mac Multiview is
+not qualified.

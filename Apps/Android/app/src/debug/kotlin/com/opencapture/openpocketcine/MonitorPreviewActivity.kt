@@ -162,9 +162,6 @@ private fun ReviewMonitor(model: AppModel, capabilities: MonitorCapabilities, so
             LivePickerHost(it, width, height, 0f, 0f, safeTop, safeBottom, zones?.systemBar?.minY,
                 model, status, false, { sheet = it }, zones?.topBar?.maxY)
         }
-        if (!locked && capabilities.gimbal && model.liveGimbalPanel == LiveGimbalPanel.SHEET) {
-            LiveGimbalSheetHost(model, layout, cluster, 0f, 0f, 0f, 0f)
-        }
         if (!locked && model.liveOperatorPanel == null) model.assist.configureTool?.let { tool ->
             MonitorAssistInspector(tool, model.assist, model, status.colorMode,
                 width, height, 0f, 0f, 0f, zones?.controls?.minY ?: height,

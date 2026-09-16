@@ -62,13 +62,16 @@ enum OsmoCameraPageAdapter {
             failure = nil
         }
         let scanning = step == 0
+        let isMac = ProcessInfo.processInfo.isiOSAppOnMac
         let titles = [
             "Find your camera", "Approve on the camera", "Join camera Wi-Fi", "Open video link",
         ]
         let bodies = [
-            "Turn the camera on and keep the phone nearby. Pocket and Nano both appear — choose the one you want.",
+            "Turn the camera on and keep the phone nearby. Choose the Osmo Nano you want to connect.",
             "If the camera shows Approve, tap it on that camera's screen. First-time pairing can wait up to 90 seconds.",
-            "We read the camera's network over Bluetooth, then join its Wi-Fi for you.",
+            isMac
+                ? "Mac의 Wi-Fi 메뉴에서 연결할 Osmo Nano의 네트워크를 선택해 주세요. 비밀번호는 Nano의 무선 연결 설정에서 확인할 수 있습니다."
+                : "We read the camera's network over Bluetooth, then join its Wi-Fi for you.",
             "Exposure, LUTs and scopes go live as soon as the video link is up.",
         ]
         var instructions: [CameraPairingInstruction] = []
@@ -78,7 +81,7 @@ enum OsmoCameraPageAdapter {
                     title: "On the camera", icon: .camera,
                     lines: ["Look for an Approve / pairing prompt", "Tap it on the camera screen"]),
                 .init(
-                    title: "On iPhone", icon: .phone,
+                    title: isMac ? "Mac에서" : "On iPhone", icon: .phone,
                     lines: [
                         "Wait here — we keep the Bluetooth link alive", "Don't force-quit the app",
                     ]),
@@ -92,9 +95,11 @@ enum OsmoCameraPageAdapter {
                         "On 5.8 GHz that can take about a minute; we keep trying",
                     ]),
                 .init(
-                    title: "On iPhone", icon: .phone,
+                    title: isMac ? "Mac에서" : "On iPhone", icon: .phone,
                     lines: [
-                        "Tap Join when iOS asks to join the camera network",
+                        isMac
+                            ? "Wi-Fi 메뉴에서 해당 Nano에 연결한 뒤 이 앱으로 돌아와 주세요."
+                            : "Tap Join when iOS asks to join the camera network",
                         LocalVPNFilter.joinWifiPhoneStep,
                     ]),
             ]

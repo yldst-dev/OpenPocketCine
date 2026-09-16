@@ -416,7 +416,7 @@ final class DatalinkDriver {
 
     /// Send the live-view enable (`0x09/0xa8`) on **UDP 9004** only.
     /// Never writes TCP 7001 — a second enable on a dying UDP flow RST'd the poke.
-    func startLiveView(receiver: UInt8 = Commands.liveViewEnableReceiverPocket) {
+    func startLiveView(receiver: UInt8 = Commands.liveViewEnableReceiverNano) {
         if closed { return }
         let seq = sendDuml(Commands.liveViewEnable(seq: 0, receiver: receiver), trackCommand: false)
         log.info(

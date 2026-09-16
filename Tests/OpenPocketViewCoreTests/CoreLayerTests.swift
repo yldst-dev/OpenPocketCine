@@ -3,57 +3,21 @@ import Testing
 @testable import OpenPocketViewCore
 
 @Suite struct BleAdvertTests {
-    // The real Osmo Pocket 4 Pro advert (new format): productType 0x00da = 218 -> model 0x22.
-    @Test func pocket4ProNewFormat() {
-        let payload: [UInt8] = [
-            0x00, 0x00, 0x00, 0xEE, 0x00, 0x04, 0xBD, 0x6E, 0x56, 0x20, 0xDA, 0x00, 0x00, 0x10,
-        ]
-        let d = BleAdvert.decode(payload)
-        #expect(d.modelId == 0x22)
-        #expect(d.newFormat == true)
-        #expect(d.rawProductType == 218)
+    @Test func nanoNewFormat() {
+        let payload: [UInt8] = [0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 222, 0]
+        let decoded = BleAdvert.decode(payload)
+        #expect(decoded.modelId == 0x0019)
+        #expect(decoded.newFormat)
     }
 
-    // Classic format: model id in bytes [0:2], new-format flag (byte5 bit2) clear.
-    @Test func classicPocket4() {
-        let payload: [UInt8] = [0x21, 0x00, 0x00, 0x58, 0xB8, 0x00, 0x11, 0x22, 0x33, 0x44]
-        let d = BleAdvert.decode(payload)
-        #expect(d.modelId == 0x21)
-        #expect(d.newFormat == false)
+    @Test func classicNano() {
+        #expect(BleAdvert.modelId([0x19, 0]) == 0x0019)
     }
 
-    @Test func emptyIsNil() {
+    @Test func unsupportedProductHasNoModel() {
+        let payload: [UInt8] = [0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 218, 0]
+        #expect(BleAdvert.decode(payload).modelId == nil)
         #expect(BleAdvert.modelId([]) == nil)
-        #expect(BleAdvert.modelId([0x00, 0x00]) == nil)  // zero is not a model
-    }
-
-    @Test func modelResolvesToPocket() {
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).name == "Osmo Pocket 4 Pro")
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).datalinkPort == 9004)
-        // Pocket 3 sends no manufacturer data -> resolves by name.
-        #expect(CameraModel.resolve(modelId: nil, name: "OsmoPocket3-A1B2").name == "Osmo Pocket 3")
-        // "pocket4p" must win over "pocket4".
-        #expect(
-            CameraModel.resolve(modelId: nil, name: "OsmoPocket4P-AAAA").name == "Osmo Pocket 4 Pro"
-        )
-        let nano = CameraModel.resolve(modelId: 0x19, name: nil)
-        #expect(nano.name == "Osmo Nano")
-        #expect(nano.family == .nano)
-        #expect(nano.usesCapturedLiveEnable)
-        #expect(!nano.supportsTapFocus)
-        #expect(!nano.supportsFocusMode)
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).supportsTapFocus)
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).supportsFocusMode)
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).usesCapturedLiveEnable)
-        #expect(CameraModel.default.usesCapturedLiveEnable)
-        #expect(!CameraModel.resolve(modelId: 0x15, name: nil).usesCapturedLiveEnable)
-        #expect(CameraModel.resolve(modelId: 0x20, name: nil).needsFirstPictureFormatPoke)
-        #expect(
-            CameraModel.resolve(modelId: nil, name: "OsmoPocket3-A1B2")
-                .needsFirstPictureFormatPoke)
-        #expect(!CameraModel.resolve(modelId: 0x21, name: nil).needsFirstPictureFormatPoke)
-        #expect(!CameraModel.resolve(modelId: 0x22, name: nil).needsFirstPictureFormatPoke)
-        #expect(!CameraModel.resolve(modelId: 0x19, name: nil).needsFirstPictureFormatPoke)
     }
 }
 
@@ -108,7 +72,7 @@ import Testing
 
         let mode = Commands.setShootingMode(.photo)
         #expect(mode.cmdId == 0xE1)
-        #expect(mode.payload == [0x17])  // Pocket 4; Nano 0x05 answers 0xEE
+        #expect(mode.payload == [0x05])  // Pocket 4; Nano 0x05 answers 0xEE
         let tap = Commands.tapFocusPoint(0.511, 0.498)
         #expect(tap.cmdId == 0x30)
         #expect(tap.payload.count == 21)

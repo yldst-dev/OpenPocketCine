@@ -1,9 +1,65 @@
 # Operator parity
 
+## Nano-only scope
+
+Both shells discover and connect only to Osmo Nano. Saved non-Nano cameras are
+excluded from their connection lists. The live-enable receiver is `0x41` and
+the Nano gate remains paired with enable-once. Both color wheels expose Normal
+8-bit, Normal 10-bit and D-Log M. The only bundled manufacturer LUT is Nano
+D-Log M to Rec.709. Gimbal, head tracking, focus and camera zoom controls are
+not part of this profile. Pocket-specific format fallback tables and photo
+encodings are removed.
+
+The historical comparison rows below describe earlier multi-model builds;
+they do not expand the supported camera set. Physical regression of the
+Nano-only branch is pending on both platforms. Earlier device results are not
+proof of this refactor.
+
 iOS is the operator-proven baseline. Android matches operator-visible behavior
 unless a row lists an exception. GPU backends, Bluetooth stacks, and OS APIs may
 diverge. Shipping a one-platform operator-visible change without a row here is
 incomplete.
+
+## Local Mac validation
+
+The independent Go viewer in `Apps/NanoMonitor/` is a separate desktop utility,
+not another mobile shell. It receives Nano preview on a shared LAN and displays
+it through FFplay. Its macOS-only setup pairs over native CoreBluetooth,
+provisions WPA2 credentials from a secure dialog and requires matching LAN
+identity before success. Other platforms remain viewer-only. It exposes no
+shooting controls. Bluetooth provisioning reached an accepted join response, and the native
+macOS app bundle verified the Nano identity over the router LAN. The Go viewer displayed real Nano AVC video after waiting for the preview
+gate acknowledgement. The desktop player uses arrival timestamps, skips
+stream-info probing and AVIO read-ahead, uses 1 decoder thread and bounds the
+compressed handoff at 8 units. This avoids the previous generated recording
+timeline. The operator confirmed near-immediate response after this change;
+that subjective result is not a measured or zero camera-to-screen latency claim. This short
+desktop check does not qualify long-run stability or latency. AP restoration
+remains unverified. The
+bundle provides normal macOS permission attribution; early route failures stay
+alive for 20 seconds to allow the system prompt to appear. Its recovery policy allows 2 picture requests per session and, after
+exhaustion, up to 2 fresh identity-checked sessions while preserving FFplay.
+Late retransmissions cannot rewind video/reply ACK cursors or invalidate the
+current picture. Actual forward gaps still require resynchronization. Mobile feature parity is intentionally out of scope, and
+physical shared-LAN verification is separate from the Mac iPad-app check.
+
+The iOS app can be built locally for an Apple silicon Mac using the Designed
+for iPad/iPhone destination. This is an experimental validation path, not a
+qualified macOS release. On this host, camera Wi-Fi is selected manually in
+macOS settings. The shell waits for the existing camera subnet check and does
+not call the iOS hotspot configuration APIs or remove manually joined networks
+in the single-camera connection path. Multiview is not qualified on Mac.
+The pairing page explains this step. iPhone and Android keep their existing
+automatic camera Wi-Fi joins. On 2026-09-16, Nano discovery was observed in the
+local Mac app and the operator confirmed a successful physical connection.
+Recording, Photo, reconnect and sustained live-view performance on Mac remain
+unqualified. This confirmation does not qualify either phone platform.
+
+The Mac path checks the camera subnet, not the target SSID. Before connecting,
+the operator must check that any already-connected camera Wi-Fi belongs to the
+selected Nano. Connecting while still on another camera network can reach the
+wrong camera. Use this experimental path with 1 camera until target-network
+confirmation is implemented.
 
 ## Photo LUT View Assist
 

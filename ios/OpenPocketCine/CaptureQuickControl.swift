@@ -322,7 +322,7 @@ struct CaptureQuickSnapshot: Hashable, Sendable {
                 from: status, model: model.session.connectedCamera?.model
             ).first(where: {
                 $0.label(for: model.session.connectedCamera?.model) == value
-            }), mode != .livePhoto {
+            }) {
                 model.session.setShootingMode(mode)
             }
         }

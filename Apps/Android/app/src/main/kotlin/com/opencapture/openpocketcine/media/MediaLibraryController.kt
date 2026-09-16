@@ -559,10 +559,7 @@ class MediaLibraryController(
     }
 
     private val usesSingleSdStorage: Boolean
-        get() {
-            if (link.internalTotalMb == 0) return true
-            return link.cameraName.contains("Pocket 3", ignoreCase = true)
-        }
+        get() = link.internalTotalMb == 0
 
     private val isNanoBody: Boolean
         get() = link.cameraName.contains("Nano", ignoreCase = true)

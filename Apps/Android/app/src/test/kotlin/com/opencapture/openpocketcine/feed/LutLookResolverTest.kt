@@ -14,32 +14,32 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 selection = LutCatalog.AUTO,
                 lutOn = false,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
-                cameraName = "Pocket 4 Pro",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
+                cameraName = "Osmo Nano",
             ),
         )
     }
 
     @Test
-    fun `built-in auto follows pocket log`() {
+    fun `built-in auto follows nano log`() {
         assertEquals(
-            LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube"),
+            LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
             ),
         )
         assertEquals(
-            LutLookSource.Asset("DJI_Official_Pocket4P_DLog_Rec709_33.cube"),
+            LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
             ),
         )
@@ -49,22 +49,22 @@ class LutLookResolverTest {
                 LutCatalog.AUTO,
                 lutOn = true,
                 colorMode = CameraCommands.COLOR_NORMAL,
-                family = "pocket",
+                family = "nano",
                 cameraName = null,
             ),
         )
     }
 
     @Test
-    fun `built-in auto leaves nano ungraded`() {
+    fun `auto applies nano log without a connected camera`() {
         assertEquals(
             LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "nano",
-                cameraName = "Osmo Nano",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "",
+                cameraName = null,
             ),
         )
     }
@@ -72,13 +72,13 @@ class LutLookResolverTest {
     @Test
     fun `dji auto picks the official cube for the body`() {
         assertEquals(
-            LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube"),
+            LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.DJI_AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
-                cameraName = "Pocket 4 Pro",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
+                cameraName = "Osmo Nano",
             ),
         )
         assertEquals(
@@ -86,19 +86,19 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 LutCatalog.DJI_AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
+                colorMode = CameraCommands.COLOR_DLOG_M,
                 family = "nano",
                 cameraName = "Osmo Nano",
             ),
         )
         assertEquals(
-            LutLookSource.Asset("DJI_Official_Action6_DLogM_Rec709_33.cube"),
+            LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.DJI_AUTO,
                 lutOn = true,
                 colorMode = 0x00,
                 family = "nano",
-                cameraName = "Osmo Action 6",
+                cameraName = "Osmo Nano",
             ),
         )
     }
@@ -109,8 +109,8 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 LutCatalog.customId("Look.cube"),
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
             )
         val custom = assertIs<LutLookSource.Custom>(source)
@@ -123,12 +123,12 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 LutCatalog.AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
             )
         assertEquals(
-            "Auto · D-Log2 → Rec.709",
+            "Auto · D-Log M → Rec.709",
             LutLookResolver.statusLabel(enabled = true, selection = LutCatalog.AUTO, source = autoDlog2),
         )
         assertEquals(
@@ -144,7 +144,7 @@ class LutLookResolverTest {
             LutLookResolver.statusLabel(enabled = false, selection = LutCatalog.AUTO, source = autoDlog2),
         )
         assertEquals(
-            "Auto · D-Log2 → Rec.709",
+            "Auto · D-Log M → Rec.709",
             LutLookResolver.statusLabel(
                 enabled = true,
                 selection = LutCatalog.DJI_AUTO,
@@ -152,9 +152,9 @@ class LutLookResolverTest {
                     LutLookResolver.resolve(
                         LutCatalog.DJI_AUTO,
                         lutOn = true,
-                        colorMode = CameraCommands.COLOR_DLOG2,
-                        family = "pocket",
-                        cameraName = "Pocket 4 Pro",
+                        colorMode = CameraCommands.COLOR_DLOG_M,
+                        family = "nano",
+                        cameraName = "Osmo Nano",
                     ),
             ),
         )
@@ -167,9 +167,9 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 LutCatalog.DJI_AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
-                cameraName = "Pocket 4 Pro",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
+                cameraName = "Osmo Nano",
                 isPhoto = true,
             ),
         )
@@ -178,9 +178,9 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 "djiDLog2",
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
-                cameraName = "Pocket 4 Pro",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
+                cameraName = "Osmo Nano",
                 isPhoto = true,
             ),
         )
@@ -189,8 +189,8 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 "customDLog",
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
                 isPhoto = true,
             ),
@@ -199,8 +199,8 @@ class LutLookResolverTest {
             LutLookResolver.resolve(
                 "creativeWarm",
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
                 cameraName = null,
                 isPhoto = true,
             ),
@@ -210,21 +210,21 @@ class LutLookResolverTest {
                 LutLookResolver.resolve(
                     LutCatalog.customId("Look.cube"),
                     lutOn = true,
-                    colorMode = CameraCommands.COLOR_DLOG2,
-                    family = "pocket",
+                    colorMode = CameraCommands.COLOR_DLOG_M,
+                    family = "nano",
                     cameraName = null,
                     isPhoto = true,
                 ),
             )
         assertEquals("Look.cube", custom.fileName)
         assertEquals(
-            LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube"),
+            LutLookSource.Asset("DJI_Official_Nano_DLogM_Rec709_33.cube"),
             LutLookResolver.resolve(
                 LutCatalog.DJI_AUTO,
                 lutOn = true,
-                colorMode = CameraCommands.COLOR_DLOG2,
-                family = "pocket",
-                cameraName = "Pocket 4 Pro",
+                colorMode = CameraCommands.COLOR_DLOG_M,
+                family = "nano",
+                cameraName = "Osmo Nano",
                 isPhoto = false,
             ),
         )
