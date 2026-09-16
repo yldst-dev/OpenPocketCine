@@ -207,6 +207,24 @@ screens and workflows without copying them.
 
 ## Connection spine
 
+### Independent Go viewer
+
+`Apps/NanoMonitor/` is a separate Go module and composition root. It does not
+link the Swift core or either mobile shell. Its domain contains access-unit
+bounds and recovery decisions; its application owns the camera/display ports
+and bounded handoff; its adapters own DUML networking, Nano AVC parsing, LAN
+discovery and the FFplay process. Only the composition root selects concrete
+adapters. The Go module has no external Go packages.
+
+The viewer assumes that camera station-mode provisioning has already finished.
+It reads and validates the camera name on the selected LAN endpoint before
+registration and preview. It sends no shooting-setting, recording or media
+commands. The only recovery owner is the viewer's bounded preview watchdog.
+The narrower desktop scope and pending physical qualification are recorded in
+[parity](PARITY.md#local-mac-validation).
+
+### Mobile connection
+
 1. BLE scan and pair (GATT FFF0).
 2. Read camera Wi-Fi credentials.
 3. Join SoftAP `192.168.2.1`. On-path only after DHCP `192.168.2.2…254`

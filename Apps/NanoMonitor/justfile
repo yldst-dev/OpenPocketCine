@@ -1,0 +1,14 @@
+default:
+    @just --list
+
+check:
+    test -z "$(gofmt -l cmd internal)"
+    go vet ./...
+    go test -race ./...
+    go build -o bin/nano-monitor ./cmd/nano-monitor
+
+build:
+    go build -trimpath -o bin/nano-monitor ./cmd/nano-monitor
+
+run *args:
+    go run ./cmd/nano-monitor {{args}}

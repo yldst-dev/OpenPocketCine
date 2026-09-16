@@ -22,6 +22,13 @@ incomplete.
 
 ## Local Mac validation
 
+The independent Go viewer in `Apps/NanoMonitor/` is a separate desktop utility,
+not another mobile shell. It only receives Nano preview on an already configured
+shared LAN and displays it through FFplay. It does not provision camera Wi-Fi
+or expose shooting controls. Its reduced recovery policy stops after bounded
+preview retries. Mobile feature parity is intentionally out of scope, and
+physical shared-LAN verification is separate from the Mac iPad-app check.
+
 The iOS app can be built locally for an Apple silicon Mac using the Designed
 for iPad/iPhone destination. This is an experimental validation path, not a
 qualified macOS release. On this host, camera Wi-Fi is selected manually in
