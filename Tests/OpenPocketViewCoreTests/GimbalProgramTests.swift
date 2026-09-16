@@ -171,10 +171,12 @@ import Testing
     @Test func overlayKeepsDistinctCapturedAnglesBeyondTheFormerPanClamp() {
         let point = GimbalWaypoint.from(yawTenth: 689, pitchTenth: -137, zoom: 1)!
         let live = GimbalWaypoint.from(yawTenth: 782, pitchTenth: -137, zoom: 1)!
-        let mark = GimbalWaypointOverlay.project(waypoint: point, slot: .b, live: live, aspect: 16 / 9)
+        let mark = GimbalWaypointOverlay.project(
+            waypoint: point, slot: .b, live: live, aspect: 16 / 9)
         #expect(mark.nx < 0.5)
         #expect(mark.onScreen)
-        let back = GimbalWaypointOverlay.project(waypoint: point, slot: .b, live: point, aspect: 16 / 9)
+        let back = GimbalWaypointOverlay.project(
+            waypoint: point, slot: .b, live: point, aspect: 16 / 9)
         #expect(abs(back.nx - 0.5) < 1e-9)
         #expect(abs(back.ny - 0.5) < 1e-9)
     }
@@ -209,7 +211,7 @@ import Testing
     }
 
     @Test func nanoHasNoGimbal() {
-        #expect(CameraModel(name: "Osmo Pocket 4 Pro").hasGimbal)
+        #expect(!CameraModel(name: "Osmo Pocket 4 Pro").hasGimbal)
         #expect(!CameraModel(name: "Osmo Nano").hasGimbal)
     }
 }

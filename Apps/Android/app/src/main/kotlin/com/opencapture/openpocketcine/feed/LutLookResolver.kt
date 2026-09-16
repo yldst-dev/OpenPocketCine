@@ -29,14 +29,14 @@ internal object LutLookResolver {
         return when (selection) {
             LutCatalog.OFF -> LutLookSource.Off
             LutCatalog.AUTO, LutCatalog.DJI_AUTO -> djiAuto(colorMode, family, cameraName)
-            "officialDLog" -> LutLookSource.Asset("DJI_Official_Pocket4P_DLog_Rec709_33.cube")
-            "officialDLog2" -> LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube")
+            "officialDLog" -> LutLookSource.Off
+            "officialDLog2" -> LutLookSource.Off
             "creativeMono", "creativeContrast", "creativeWarm", "creativeCool" ->
                 LutLookSource.Creative(LutCatalog.creativeName(selection) ?: "Mono")
-            "djiDLog" -> LutLookSource.Asset("DJI_Official_Pocket4P_DLog_Rec709_33.cube")
-            "djiDLog2" -> LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube")
+            "djiDLog" -> LutLookSource.Off
+            "djiDLog2" -> LutLookSource.Off
             "djiDLogM" -> LutLookSource.Asset(dLogMFile(cameraName))
-            "djiAction6DLogM" -> LutLookSource.Asset("DJI_Official_Action6_DLogM_Rec709_33.cube")
+            "djiAction6DLogM" -> LutLookSource.Off
             else -> {
                 LutCatalog.customFileName(selection)?.let { LutLookSource.Custom(it) }
                     ?: LutCatalog.officialBuiltInLooks.firstOrNull { LutCatalog.matches(it, selection) }
@@ -90,33 +90,14 @@ internal object LutLookResolver {
         }
 
     private fun djiAuto(colorMode: Int, family: String, cameraName: String?): LutLookSource {
-        val nano = family.equals("nano", ignoreCase = true)
-        return when (colorMode) {
-            CameraCommands.COLOR_DLOG2 ->
-                if (nano) {
-                    LutLookSource.Asset(dLogMFile(cameraName))
-                } else {
-                    LutLookSource.Asset("DJI_Official_Pocket4P_DLog2_Rec709_33.cube")
-                }
-            CameraCommands.COLOR_DLOG ->
-                if (nano) {
-                    LutLookSource.Asset(dLogMFile(cameraName))
-                } else {
-                    LutLookSource.Asset("DJI_Official_Pocket4P_DLog_Rec709_33.cube")
-                }
-            COLOR_DLOG_M -> LutLookSource.Asset(dLogMFile(cameraName))
-            else -> LutLookSource.Off
+        return if (colorMode == CameraCommands.COLOR_DLOG_M) {
+            LutLookSource.Asset(dLogMFile(cameraName))
+        } else {
+            LutLookSource.Off
         }
     }
 
-    private fun dLogMFile(cameraName: String?): String {
-        val n = cameraName.orEmpty().lowercase().replace(" ", "")
-        return if ("action6" in n) {
-            "DJI_Official_Action6_DLogM_Rec709_33.cube"
-        } else {
-            "DJI_Official_Nano_DLogM_Rec709_33.cube"
-        }
-    }
+    private fun dLogMFile(cameraName: String?): String = "DJI_Official_Nano_DLogM_Rec709_33.cube"
 
     private const val COLOR_DLOG_M = 0x00
 

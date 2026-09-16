@@ -10,12 +10,7 @@ import kotlin.test.assertTrue
 class LutCatalogTest {
     private val shipped =
         listOf(
-            "DJI_Official_Action6_DLogM_Rec709_33.cube",
             "DJI_Official_Nano_DLogM_Rec709_33.cube",
-            "DJI_Official_Pocket4P_DLog2_Rec709_33.cube",
-            "DJI_Official_Pocket4P_DLog_Rec709_33.cube",
-            "DJI_Pocket4P_DLog2_Rec709_33.cube",
-            "DJI_Pocket4P_DLog_Rec709_33.cube",
         )
 
     @Test
@@ -35,15 +30,12 @@ class LutCatalogTest {
         assertEquals(shipped.toSet(), LutCatalog.shippedAssetFileNames.toSet())
         assertEquals(
             listOf(
-                "DJI_Official_Pocket4P_DLog_Rec709_33.cube",
-                "DJI_Official_Pocket4P_DLog2_Rec709_33.cube",
                 "DJI_Official_Nano_DLogM_Rec709_33.cube",
-                "DJI_Official_Action6_DLogM_Rec709_33.cube",
             ),
             LutCatalog.officialDji.map { it.fileName },
         )
         assertEquals(
-            listOf("D-Log → Rec.709", "D-Log2 → Rec.709", "D-Log M → Rec.709", "Action 6 D-Log M → Rec.709"),
+            listOf("D-Log M → Rec.709"),
             LutCatalog.officialDji.map { it.title },
         )
     }
@@ -52,7 +44,7 @@ class LutCatalogTest {
     fun djiTabListsAutoThenOfficialCubesNotBuiltInLooks() {
         val dji = LutCatalog.djiEntries(shipped)
         assertEquals(
-            listOf("djiAuto", "djiDLog", "djiDLog2", "djiDLogM", "djiAction6DLogM"),
+            listOf("djiAuto", "djiDLogM"),
             dji.map { it.id },
         )
         assertEquals("Auto", dji.first().title)
@@ -67,8 +59,8 @@ class LutCatalogTest {
 
     @Test
     fun djiTabKeepsUnknownAssetCubes() {
-        val dji = LutCatalog.djiEntries(listOf("DJI_Official_Pocket4P_DLog_Rec709_33.cube", "Film.cube"))
-        assertEquals(listOf("djiAuto", "djiDLog", "asset:Film.cube"), dji.map { it.id })
+        val dji = LutCatalog.djiEntries(listOf("DJI_Official_Nano_DLogM_Rec709_33.cube", "Film.cube"))
+        assertEquals(listOf("djiAuto", "djiDLogM", "asset:Film.cube"), dji.map { it.id })
         assertEquals("Film", dji.last().title)
     }
 
@@ -113,8 +105,7 @@ class LutCatalogTest {
     fun titleAndCategoryCoverPickerIds() {
         assertEquals("Auto", LutCatalog.titleFor("auto"))
         assertEquals("Auto", LutCatalog.titleFor("djiAuto"))
-        assertEquals("D-Log2 → Rec.709", LutCatalog.titleFor("officialDLog2"))
-        assertEquals("Action 6 D-Log M → Rec.709", LutCatalog.titleFor("djiAction6DLogM"))
+        assertEquals("D-Log M → Rec.709", LutCatalog.titleFor("djiDLogM"))
         assertEquals("Look", LutCatalog.titleFor("custom:Look.cube"))
         assertEquals("Custom", LutCatalog.titleFor("customFile"))
         assertEquals(LutCategory.DJI, LutCatalog.categoryOf("off"))

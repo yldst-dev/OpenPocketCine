@@ -390,40 +390,9 @@ fun LivePortraitChrome(
             )
         }
 
-        if (!captureOpen && showGimbalButton && !gimbalButton.isEmpty) {
-            LiveGimbalButton(
-                locked = uiLocked,
-                onClick = {
-                    model.liveGimbalPanel =
-                        if (model.liveGimbalPanel == LiveGimbalPanel.SHEET) LiveGimbalPanel.NONE
-                        else LiveGimbalPanel.SHEET
-                },
-                modifier =
-                    Modifier
-                        .liveModuleFrame(gimbalButton)
-                        .alpha(if (uiLocked) 0.4f else 1f),
-            )
-        }
-        if (showGimbalButton) {
-            Box(Modifier.liveModuleFrame(stick).alpha(if (captureOpen) 0f else 1f).chromeEditStroke(editing != null, true)) {
-                LiveGimbalStick(
-                    enabled = !captureOpen && !uiLocked && model.liveOperatorPanel == null && chromeInteractive,
-                    onMove = model::updateGimbalStick,
-                    onRelease = model::endGimbalStick,
-                    onRecenter = { model.session.recenterGimbal() },
-                    onFlip = { model.session.flipGimbal() },
-                )
-            }
-        }
-        if (!captureOpen && showGimbalButton && chromeInteractive && !uiLocked && model.liveOperatorPanel == null) {
-            LiveGimbalOverlay(
-                model = model,
-                layout = layout,
-                feed = layout.onFeed,
-                joystickBounds = stick,
-                uiLocked = uiLocked,
-            )
-        }
+
+
+
 
         Box(
             Modifier

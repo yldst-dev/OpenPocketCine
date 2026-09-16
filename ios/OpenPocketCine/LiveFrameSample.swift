@@ -229,8 +229,8 @@ enum PocketScopeSampler {
     static func monitorCube(for transfer: MonitorTransfer, effects: LiveImageEffects) -> CubeLUT? {
         if let armed = ScopeMonitorLook.cube(from: effects) { return armed }
         switch transfer {
-        case .dlog: return BundledOfficialDJILUT.cube(.pocketDLog)
-        case .dlog2: return BundledOfficialDJILUT.cube(.pocketDLog2)
+        case .dlog: return nil
+        case .dlog2: return nil
         case .rec709, .hdr, .dlogm: return nil
         }
     }
@@ -572,7 +572,8 @@ final class LiveAssistEngine: @unchecked Sendable {
         if let packed {
             let tapMin = LiveFrameTap.minRGB(packed.bytes)
             let tapMax = LiveFrameTap.maxRGB(packed.bytes)
-            let inferred = fx.allowsTransferInference
+            let inferred =
+                fx.allowsTransferInference
                 ? MonitorTransfer.inferred(minByte: tapMin, maxByte: tapMax, fallback: transfer)
                 : transfer
             if inferred != transfer {

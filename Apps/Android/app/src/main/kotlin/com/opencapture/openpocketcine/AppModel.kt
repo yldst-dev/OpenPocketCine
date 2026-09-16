@@ -81,7 +81,6 @@ class AppModel(context: Context) {
             )
     var gimbalRamp by mutableStateOf(OperatorPrefs.gimbalRamp(appContext))
         private set
-    var liveGimbalPanel by mutableStateOf(LiveGimbalPanel.NONE)
     /** Canvas-space centre of the programmed-move editor / Run pill. Null until first open or drag. */
     var gimbalFloatCenter by mutableStateOf<Offset?>(null)
     var gimbalDebugCenter by mutableStateOf<Offset?>(null)
@@ -153,7 +152,6 @@ class AppModel(context: Context) {
 
     fun beginChromeEditing(mode: PocketDispMode) {
         liveOperatorPanel = null
-        liveGimbalPanel = LiveGimbalPanel.NONE
         setDisplayMode(clean = mode == PocketDispMode.CLEAN)
         chromeEditorMode = mode
     }

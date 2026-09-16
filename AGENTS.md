@@ -1,7 +1,7 @@
 # OpenPocketCine
 
-Open-source iOS + Android app to connect to and monitor DJI Osmo Pocket cameras —
-primarily **Osmo Pocket 4 / 4 Pro**, with Nano live view on AVC.
+Open-source iOS + Android app to connect to and monitor **DJI Osmo Nano** with AVC live view.
+Only Nano is a supported camera profile.
 
 ## Stack & paths
 

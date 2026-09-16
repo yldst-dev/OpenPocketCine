@@ -292,7 +292,7 @@ final class LiveAssistState {
     var lutEnabled = true
     var lutSelection: LUTSelection = .djiAuto
     var monitorColorMode: ColorMode?
-    var monitorFamily: CameraBodyFamily = .pocket
+    var monitorFamily: CameraBodyFamily = .nano
     var monitorCameraName: String?
     /// Media player is grading a clip (connected or not). LUT sheet must not
     /// restamp Auto from the live SET — disconnected has no `inPlayback` flag.
@@ -544,7 +544,7 @@ final class LiveAssistState {
     /// Photo does not persist Rec.709 over last live log, and does not rewrite LUT prefs.
     func syncLUT(
         to colorMode: ColorMode?,
-        family: CameraBodyFamily = .pocket,
+        family: CameraBodyFamily = .nano,
         cameraName: String? = nil,
         isPhoto: Bool = false,
         persistLast: Bool = true
@@ -564,7 +564,7 @@ final class LiveAssistState {
     /// from a Normal take over last live D-Log / D-Log2.
     func adoptPlaybackColor(
         _ colorMode: ColorMode,
-        family: CameraBodyFamily = .pocket,
+        family: CameraBodyFamily = .nano,
         cameraName: String? = nil
     ) {
         liveIsPhoto = false
@@ -580,7 +580,7 @@ final class LiveAssistState {
     func bindLUTPicker(
         live: ColorMode?,
         inPlayback: Bool,
-        family: CameraBodyFamily = .pocket,
+        family: CameraBodyFamily = .nano,
         cameraName: String? = nil,
         isPhoto: Bool = false,
         isWatching: Bool = false
@@ -612,8 +612,6 @@ final class LiveAssistState {
     /// inspector. Calling this never changes enablement or preferences.
     private func resolvedLUTCube() -> CubeLUT? {
         switch resolvedSource() {
-        case .official(let id):
-            return BundledPocketLUT.cube(id)
         case .dji(let id):
             return BundledOfficialDJILUT.cube(id)
         case .creative(let look):
@@ -774,7 +772,6 @@ enum OperatorPrefs {
     private static let assistKey = "OpenPocketCine.Assist.v1"
     private static let recordConfirmKey = "OpenPocketCine.RecordConfirmation"
     private static let hapticsKey = "OpenPocketCine.HapticsEnabled"
-    private static let headTrackingKey = "OpenPocketCine.HeadTrackingEnabled"
     private static let gimbalStickSensitivityKey = "OpenPocketCine.GimbalStickSensitivity"
     private static let virtualJoystickInvertPanKey = "OpenPocketCine.VirtualJoystickInvertPan"
     private static let virtualJoystickInvertTiltKey = "OpenPocketCine.VirtualJoystickInvertTilt"
@@ -866,11 +863,6 @@ enum OperatorPrefs {
                 UserDefaults.standard.set(data, forKey: assistToolUsageKey)
             }
         }
-    }
-
-    static var headTrackingEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: headTrackingKey) }
-        set { UserDefaults.standard.set(newValue, forKey: headTrackingKey) }
     }
 
     static var gimbalRamp: GimbalRamp {

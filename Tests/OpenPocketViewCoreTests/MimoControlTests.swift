@@ -164,24 +164,24 @@ import Testing
 
     @Test func colorModePackAndParse() {
         #expect(Commands.setColorMode(.normal).cmdId == 0x42)
-        #expect(Commands.setColorMode(.normal).payload == [0x3F])
+        #expect(Commands.setColorMode(.normal).payload == [0x00])
         #expect(Commands.setColorMode(.hdr).payload == [0x3C])
         #expect(Commands.setColorMode(.dLog).payload == [0x17])
         #expect(Commands.setColorMode(.dLog2).payload == [0x41])
-        #expect(Commands.setColorMode(.normal10).payload == [0x3D])
-        #expect(Commands.setColorMode(.dLogM).payload == [0x00])
+        #expect(Commands.setColorMode(.normal10).payload == [0x3F])
+        #expect(Commands.setColorMode(.dLogM).payload == [0x3D])
         let nano = CameraModel.resolve(modelId: 0x0019, name: nil)
         #expect(Commands.setColorMode(.normal, model: nano).payload == [0x00])
         #expect(Commands.setColorMode(.normal10, model: nano).payload == [0x3F])
         #expect(Commands.setColorMode(.dLogM, model: nano).payload == [0x3D])
 
         var effect = [UInt8](repeating: 0, count: 16)
-        effect[2] = 0x41
+        effect[2] = 0x3D
         var s = CameraStatus()
         #expect(
             CameraStatusDecoder.applySubscribePush(
                 SubscribePush.pack(name: "cam_image_effect", value: effect), to: &s))
-        #expect(s.colorMode == .dLog2)
+        #expect(s.colorMode == .dLogM)
     }
 
     @Test func focusModePackAndLensState() {
@@ -265,7 +265,7 @@ import Testing
                 == [0x06, 0x64, 0x00, 0x9C, 0xFF])
 
         var effect = [UInt8](repeating: 0, count: 16)
-        effect[2] = 0x3F
+        effect[2] = 0x00
         effect[4] = 0x06
         effect[5] = 0x1E
         effect[6] = 0x00
@@ -551,37 +551,6 @@ import Testing
             ])
         #expect(VideoFrameRate(drumLabel: "48p") == .fps48)
         #expect(VideoFrameRate(drumLabel: "120p") == .fps120)
-        #expect(
-            ColorMode.available(for: .pocket).map(\.label)
-                == ["Normal", "HDR", "D-Log"])
-        #expect(
-            ColorMode.available(for: CameraModel.resolve(modelId: 0x0022, name: nil)).map(\.label)
-                == ["Normal", "HDR", "D-Log", "D-Log2"])
-        #expect(
-            ColorMode.available(for: CameraModel.resolve(modelId: 0x0021, name: nil)).map(\.label)
-                == ["Normal", "HDR", "D-Log"])
-        #expect(
-            ColorMode.available(for: CameraModel.resolve(modelId: 0x0020, name: nil)).map {
-                $0.label(for: .pocket)
-            } == ["Normal", "HDR", "D-Log M"])
-        #expect(
-            CamCapColorMode.wheel(
-                available: [.dLog2, .dLog, .hdr, .normal],
-                model: CameraModel.resolve(modelId: 0x0022, name: nil)
-            ).map(\.label) == ["Normal", "HDR", "D-Log", "D-Log2"])
-        #expect(
-            !CamCapColorMode.wheel(
-                available: [.dLog2, .dLog, .hdr, .normal],
-                model: CameraModel.resolve(modelId: 0x0021, name: nil)
-            ).contains(.dLog2))
-        #expect(
-            CamCapColorMode.wheel(
-                available: [], model: CameraModel.resolve(modelId: 0x0020, name: nil)
-            ).map { $0.label(for: .pocket) } == ["Normal", "HDR", "D-Log M"])
-        #expect(
-            !CamCapColorMode.wheel(
-                available: [], model: CameraModel.resolve(modelId: 0x0021, name: nil)
-            ).contains(.dLog2))
         #expect(
             ColorMode.available(for: .nano).map { $0.label(for: .nano) }
                 == ["Normal 8-bit", "Normal 10-bit", "D-Log M 10-bit"])
@@ -1263,7 +1232,7 @@ import Testing
     @Test func recordUnchanged() {
         #expect(Commands.recordStart().payload == [0x01])
         #expect(Commands.recordStop().payload == [0x00])
-        #expect(Commands.setShootingMode(.photo).payload == [0x17])
+        #expect(Commands.setShootingMode(.photo).payload == [0x05])
     }
 
     @Test func commandReplyFlagsAndOpcodeKey() {

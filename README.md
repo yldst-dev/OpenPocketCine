@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <strong>The open field monitor for DJI Osmo.</strong><br>
+  <strong>The open field monitor for DJI Osmo Nano.</strong><br>
   Pro monitoring scopes, playback, camera control, and optional Frame.io upload with LUT
   baking. Free and open source.
 </p>
@@ -28,9 +28,11 @@
 
 ## Made for the shot
 
-OpenPocketCine is a production monitor and remote for the **DJI Osmo** series. Live view is
-captured today for **Osmo Pocket 4 / 4 Pro** (HEVC) and, on iOS, **Osmo Nano** (AVC). Other Osmo
-bodies can show up in Bluetooth scan; Action and 360 live view is not captured yet.
+OpenPocketCine is a production monitor and remote for **DJI Osmo Nano**.
+This branch supports Nano only, using its AVC live view. Bluetooth discovery,
+saved-camera lists and connection entry points exclude other camera models.
+See the [Nano profile](handbook/src/content/docs/guides/nano.md) for the retained
+controls and verification requirements.
 
 iOS (iPhone and iPad) is the daily driver. Android is available as a
 [public beta on Google Play](https://play.google.com/store/apps/details?id=com.opencapture.openpocketcine&hl=en-US&ah=mXzHtdYCMQTB83vt0jIRLnOOZaA).
@@ -41,11 +43,8 @@ iOS (iPhone and iPad) is the daily driver. Android is available as a
   peaking paint the iOS feed.
 - **Frame once for every delivery.** Grids, aspect guides, and a center crosshair stay on the
   picture.
-- **Run the camera from the phone.** Record, ISO, EV, zoom, and related writes on iOS, plus
-  gimbal on Pocket. On Pocket 4 Pro, zoom in D-Log2 hops to D-Log automatically so you keep
-  moving.
-- **Lock a face from the monitor.** On iOS Pocket in AF-C, tap an on-device face box to start
-  the camera's subject tracking.
+- **Run the camera from the phone.** Record, take photos, adjust ISO, shutter,
+  white balance and exposure compensation using Nano's reported capabilities.
 - **Review before striking the set.** On iOS, browse clips and stills, scrub playback, check
   scopes, and preview the look.
 - **Ship it with the look baked in.** On iOS, built-in or custom `.cube` LUTs, native share, and
@@ -55,15 +54,6 @@ Verify record start/stop on the camera body until you trust the link. Reverse-en
 can be incomplete.
 
 ## See it in action
-
-**Face lock.** On iOS Pocket in AF-C, tap a face on the feed to start the camera's
-subject tracking. Histogram, zebras, and a LUT stay on while you record.
-
-<p align="center">
-  <a href="https://openpocketcine.app/">
-    <img alt="Live monitor with custom face tracking for gimbal lock-on" src="site/assets/screens/face-tracking.webp" width="820">
-  </a>
-</p>
 
 **Scopes.** Read the image like a colorist. Waveform, RGB parade, histogram, and
 vectorscope run live beside the image you are judging, with Traffic Lights on the feed.
@@ -83,10 +73,8 @@ grids, and crosshairs sit on the iOS assist rail — including in portrait.
   </a>
 </p>
 
-**Camera control.** On iOS: record, ISO, EV, zoom, and related writes, plus gimbal on
-Pocket (on-screen stick, a connected game controller, or iOS AirPods head
-tracking). On Pocket 4 Pro, zoom while
-you're in D-Log2 hops to D-Log automatically so you keep moving.
+**Camera control.** Record, photos, ISO, shutter, white balance and exposure
+compensation stay available. Nano has no gimbal, autofocus or camera zoom.
 
 <p align="center">
   <a href="https://openpocketcine.app/#controls">
@@ -128,20 +116,18 @@ when Frame.io is configured.
 
 - Bluetooth pairing, camera Wi-Fi join, saved-camera profiles, and reconnect
 - Live-view monitoring, timecode, battery, storage, and camera status readouts
-- Record, ISO, EV, zoom, and related camera writes on iOS, plus gimbal on Pocket (on-screen
-  stick or a connected game controller; Android live control is a thinner set: record, ISO,
-  shutter, white balance, tap-focus, gimbal stick)
+- Nano recording, photo capture, ISO, shutter, white balance and EV controls
 - Scopes, exposure and focus assists, framing tools, and customizable DISP chrome on iOS
 - Clip browsing, playback, LUT preview, LUT bake and Convert log on export, and optional Frame.io on iOS
 - Universal iPhone and iPad app (one adaptive monitor; pairing uses a wider two-column layout)
 
 The native Android implementation lives in this repository as a phone shell with live pairing,
-HEVC live view, and GPU LUT / peaking / false colour / zebra on the feed. Join the
+AVC live view, and GPU LUT / peaking / false colour / zebra on the feed. Join the
 [public beta on Google Play](https://play.google.com/store/apps/details?id=com.opencapture.openpocketcine&hl=en-US&ah=mXzHtdYCMQTB83vt0jIRLnOOZaA). Clip export LUT bake, Convert log, and
 GPU scopes are iOS today.
 
-Captured live view: **Osmo Pocket 4 / 4 Pro**, and **Osmo Nano** on iOS. Other Osmo models may
-appear in scan. Action and 360 live view is not captured yet.
+Supported camera: **Osmo Nano**. Physical regression of this Nano-only branch
+is required on both platforms before release.
 
 ## Roadmap shaped in the open
 

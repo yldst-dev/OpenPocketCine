@@ -66,7 +66,7 @@ enum OsmoCameraPageAdapter {
             "Find your camera", "Approve on the camera", "Join camera Wi-Fi", "Open video link",
         ]
         let bodies = [
-            "Turn the camera on and keep the phone nearby. Pocket and Nano both appear — choose the one you want.",
+            "Turn the camera on and keep the phone nearby. Choose the Osmo Nano you want to connect.",
             "If the camera shows Approve, tap it on that camera's screen. First-time pairing can wait up to 90 seconds.",
             "We read the camera's network over Bluetooth, then join its Wi-Fi for you.",
             "Exposure, LUTs and scopes go live as soon as the video link is up.",

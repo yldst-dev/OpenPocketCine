@@ -4,10 +4,7 @@ import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-/**
- * Documented Pocket 4 payloads only (`docs/protocol-notes.md`).
- * No invented `0xE1` values. No 1 Hz `0x09/0xa8`.
- */
+
 object CameraCommands {
     const val SET = 0x02
     const val SENDER_APP = 0x02
@@ -54,52 +51,29 @@ object CameraCommands {
     const val COLOR_HDR = 0x3C
     const val COLOR_DLOG = 0x17
     const val COLOR_DLOG2 = 0x41
-    /** Semantic Normal 10-bit. Nano SET is `3F`; Pocket 3 D-Log M wire is `3D`. */
+
     const val COLOR_NORMAL10 = 0x3D
-    /** Semantic D-Log M. Nano and Pocket 3 SET is `3D`. */
+
     const val COLOR_DLOG_M = 0x00
 
     private val COLOR_KNOWN =
         setOf(COLOR_NORMAL, COLOR_HDR, COLOR_DLOG, COLOR_DLOG2, COLOR_NORMAL10, COLOR_DLOG_M)
 
-    /**
-     * Pocket 3 / Nano SET / `cam_image_effect` `@2`. Pocket 3 (#176): Normal
-     * `00`, HDR `3C`, D-Log M `3D`. Nano: Normal 8-bit `00`, Normal 10-bit
-     * `3F`, D-Log M `3D`. Other bodies use the COLOR_* constants as wire bytes.
-     */
+
     fun wireColorMode(mode: Int, name: String = "", family: String = ""): Int {
-        if (CameraModel.looksLikeNano(name, family)) {
-            return when (mode) {
-                COLOR_NORMAL -> 0x00
-                COLOR_NORMAL10 -> 0x3F
-                COLOR_DLOG_M -> 0x3D
-                else -> mode
-            }
-        }
-        if (!CameraModel.looksLikePocket3(name)) return mode
         return when (mode) {
             COLOR_NORMAL -> 0x00
+            COLOR_NORMAL10 -> 0x3F
             COLOR_DLOG_M -> 0x3D
             else -> mode
         }
     }
 
-    /** Inverse of [wireColorMode]. */
-    fun parseColorMode(byte: Int, name: String = "", family: String = ""): Int {
-        if (CameraModel.looksLikeNano(name, family)) {
-            return when (byte) {
-                0x00 -> COLOR_NORMAL
-                0x3F -> COLOR_NORMAL10
-                0x3D -> COLOR_DLOG_M
-                else -> byte
-            }
-        }
-        if (!CameraModel.looksLikePocket3(name)) return byte
-        return when (byte) {
-            0x00 -> COLOR_NORMAL
-            0x3D -> COLOR_DLOG_M
-            else -> byte
-        }
+    fun parseColorMode(byte: Int, name: String = "", family: String = ""): Int = when (byte) {
+        0x00 -> COLOR_NORMAL
+        0x3F -> COLOR_NORMAL10
+        0x3D -> COLOR_DLOG_M
+        else -> -1
     }
 
     const val EXPO_AUTO = 0x01
@@ -204,10 +178,7 @@ object CameraCommands {
     /** Video `0x02/0x18` trailer. SlowMo uses [slowMoFormatTrailer] instead. */
     val VIDEO_FORMAT_TRAILER: ByteArray = byteArrayOf(0x00, 0x00, 0x00)
 
-    /**
-     * Pocket 3 SlowMo `0x02/0x18` trailer, or null when that fps index has no
-     * documented SlowMo request. 4X (100/120) is `00 04 00`; 8X (240) is `00 08 00`.
-     */
+
     fun slowMoFormatTrailer(fpsIndex: Int): ByteArray? =
         when (fpsIndex) {
             VideoFrameRate.FPS100.rawValue,
@@ -229,22 +200,13 @@ object CameraCommands {
         return byteArrayOf(res.toByte(), fpsIndex.toByte()) + trailer
     }
 
-    /**
-     * JNI extra for video-format SET. Third field is shooting-mode raw for
-     * Pocket 3 and Pocket 4 Pro SlowMo so the facade can emit 4X/8X trailers
-     * (200 fps still uses `00 04 00`). Regular Pocket 4 omits it.
-     */
+
     fun formatCommandExtra(
         res: Int,
         fpsIndex: Int,
         shootingMode: Int = SHOOT_VIDEO,
         cameraName: String? = null,
     ): String {
-        if (shootingMode == SHOOT_SLOWMO &&
-            CameraModel.supportsSlowMoFormatTrailer(cameraName.orEmpty())
-        ) {
-            return "$res\u001f$fpsIndex\u001f$shootingMode"
-        }
         return "$res\u001f$fpsIndex"
     }
 
@@ -348,7 +310,6 @@ object CameraCommands {
         byteArrayOf(0x00, 0x02, 0x01, 0x00) + floatLE(x) + floatLE(y) + ByteArray(8)
 
     const val RX_GIMBAL = 0x04
-    const val LIVE_VIEW_ENABLE_RECEIVER_POCKET = 0x08
     const val LIVE_VIEW_ENABLE_RECEIVER_NANO = 0x41
 
     const val CMD_PHOTO = 0x01
@@ -380,59 +341,31 @@ object CameraCommands {
     const val SHOOT_TIMELAPSE = 0x02
     const val SHOOT_PHOTO = 0x05
     const val SHOOT_HYPERLAPSE = 0x0A
-    const val SHOOT_PHOTO_POCKET4 = 0x17
     const val SHOOT_SUPER_NIGHT = 0x28
-    /** Pocket 4 Pro Live Photo, physically observed in Mimo. */
-    const val SHOOT_LIVE_PHOTO = 0x4D
 
-    /** Still capture: Photo `0x05` / Pocket 4 `0x17` / Live Photo `0x4D`. SuperNight `0x28` is video. */
+
     fun isPhotoMode(shootingMode: Int): Boolean =
-        shootingMode == SHOOT_PHOTO ||
-            shootingMode == SHOOT_PHOTO_POCKET4 ||
-            shootingMode == SHOOT_LIVE_PHOTO
+        shootingMode == SHOOT_PHOTO
 
-    /**
-     * Label for a tabled `0x02/0xE1` value, or null when the camera reports one we do not know.
-     * Both photo encodings read back as "Photo" — the body decides which it uses.
-     * Pocket 3 presents `0x28` as Low-Light video; other bodies keep SuperNight.
-     */
+
     fun shootingModeLabel(raw: Int, cameraName: String? = null): String? =
         when (raw) {
             SHOOT_SLOWMO -> "SlowMo"
             SHOOT_VIDEO -> "Video"
             SHOOT_TIMELAPSE -> "TimeLapse"
-            SHOOT_PHOTO, SHOOT_PHOTO_POCKET4 -> "Photo"
-            SHOOT_LIVE_PHOTO -> "Live Photo"
+            SHOOT_PHOTO -> "Photo"
             SHOOT_HYPERLAPSE -> "HyperLapse"
             SHOOT_SUPER_NIGHT ->
-                if (CameraModel.looksLikePocket3(cameraName.orEmpty())) "Low-Light" else "SuperNight"
+                "SuperNight"
             else -> null
         }
 
-    /**
-     * Photo is the one mode whose `0x02/0xE1` value is body-dependent: Pocket 4 / 4 Pro take
-     * `0x17`, and a Nano rejects that and takes `0x05`.
-     */
+
     fun photoModeRaw(cameraName: String?): Int {
-        val n = cameraName.orEmpty().lowercase().replace(" ", "")
-        return if (n.contains("pocket4")) SHOOT_PHOTO_POCKET4 else SHOOT_PHOTO
+        return SHOOT_PHOTO
     }
 
-    /**
-     * The camera's own on-screen carousel order — Video, Photo, TimeLapse, HyperLapse,
-     * SuperNight (Low-Light on Pocket 3), SlowMo — which is not the numeric order. The
-     * wire enum is sparse and unordered, so this is tabled and never computed.
-     *
-     * Only ever send a value from this table. Sweeping the `0x02/0xE1` value space froze a Nano
-     * solid and needed a power cycle, so an unlisted mode must be refused rather than passed
-     * through (Osmosis `MEDIA_PROTOCOL.md` §13a, DJI-Remote `engine_media.c`).
-     *
-     * Panorama (`0x0c`) is documented but left out: no hardware here has confirmed it.
-     *
-     * Note this is `0x02/0xE1`, never `0x02/0x02`. That opcode is nominally DJI's four-value
-     * *work* mode, but on a Nano it **is** record control — a "Video" entry mapped to `[01]`
-     * would start a recording behind the operator's back.
-     */
+
     fun shootingModeCarousel(cameraName: String?): List<Int> =
         listOf(
             SHOOT_VIDEO,
@@ -892,7 +825,7 @@ object CameraCommands {
 
     fun resolutionLabel(code: Int): String = VideoResolution.fromRaw(code)?.label ?: "—"
 
-    fun colorLabel(mode: Int, family: String = "pocket"): String =
+    fun colorLabel(mode: Int, family: String = "nano"): String =
         when (mode) {
             COLOR_NORMAL -> if (family == "nano") "Normal 8-bit" else "Normal"
             COLOR_HDR -> "HDR"
@@ -1047,11 +980,7 @@ object CameraCommands {
         return out
     }
 
-    /**
-     * `camcap_video_format` — legal `[res][fps]` pairs for the current shooting
-     * mode. Pocket 4 Pro Video (`mimo-live-start-20260828`): `01 25 00 0c` then
-     * 12× `[res][fps_idx] 00` — 4K 24–60 then 1080p 60–24.
-     */
+
     fun parseVideoFormats(value: ByteArray): List<VideoFormat> {
         if (value.size < 5 || value[0] != 0x01.toByte()) return emptyList()
         val inner = (value[1].toInt() and 0xFF) or ((value[2].toInt() and 0xFF) shl 8)

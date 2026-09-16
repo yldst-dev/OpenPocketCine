@@ -1,17 +1,5 @@
 import Foundation
 
-/// `camcap_shutter` — legal shutter set the body publishes over `0x00/0x99`.
-///
-/// Not a `0x02/0x28` GET. SET stays `0x02/0x28`. The table reshapes with fps /
-/// rec format / expo (Mimo re-pushes on those changes). Pocket 4 Pro value:
-///
-/// ```
-/// 01 | innerLen:u16-LE | 10 B header | count × 3 B
-/// header ends `05 <count>`
-/// item = encoded:u16-LE + flag
-/// encoded | 0x8000 → 1/N  (same encoding as the shutter SET)
-/// encoded without 0x8000 → N seconds (photo); wheel ignores those
-/// ```
 public enum CamCapShutter {
     public static let subscribeKey = "camcap_shutter"
 
@@ -193,9 +181,6 @@ public enum CamCapIso {
     }
 }
 
-/// Nano `camcap_color_mode` (Mimo 2026-08-18): `01 04 00 03 00 3F 3D`.
-/// Wire (with the body model): `00` Normal 8-bit / `3F` Normal 10-bit /
-/// `3D` D-Log M. Pocket 3 `@2` / SET bytes are `00`/`3C`/`3D` (#176).
 public enum CamCapColorMode {
     public static let subscribeKey = "camcap_color_mode"
 
@@ -229,34 +214,15 @@ public enum CamCapColorMode {
     }
 }
 
-/// `camcap_video_format` — legal `[res][fps]` pairs for the current shooting mode.
-///
-/// Mimo live-start 2026-08-28 (Pocket 4 Pro, Video):
-/// `01 25 00 0c` then 12× `[res][fps_idx] 00` — 4K 24–60 then 1080p 60–24.
-/// Slow-mo 100/120/240 is a different shooting mode; this table is Video only.
 public enum CamCapVideoFormat {
     public static let subscribeKey = "camcap_video_format"
 
-    /// Pocket 3 rejects camcap subscriptions. Documented mode tables fill the picker
-    /// only when the body reported nothing. Reported capabilities always win.
-    /// Pocket 4 / 4 Pro / Nano get no invented tables. TimeLapse / HyperLapse
-    /// format menus were UI-only in the Pocket 3 survey — no accepted `0x02/0x18`
-    /// pairs — so they stay empty until camcap or a later accepted capture.
     public static func pickerFormats(
         available: [VideoFormat], model: CameraModel?, shootingMode: Int
     ) -> [VideoFormat] {
-        if !available.isEmpty { return available }
-        guard model?.isPocket3 == true else { return available }
-        switch ShootingMode.fromStatus(shootingMode) {
-        case .video: return pocket3VideoFormats
-        case .slowMo: return pocket3SlowMoFormats
-        case .superNight: return pocket3LowLightFormats
-        default: return available
-        }
+        available
     }
 
-    /// Operator FORMAT SET. Empty tables are read-only (current pair only).
-    /// Documented Pocket 3 fallbacks fill `pickerFormats`; Pocket 4 / 4 Pro never invent.
     public static func allowsOperatorSet(
         _ format: VideoFormat,
         available: [VideoFormat],
@@ -266,32 +232,6 @@ public enum CamCapVideoFormat {
         let legal = pickerFormats(
             available: available, model: model, shootingMode: shootingMode)
         return !legal.isEmpty && legal.contains(format)
-    }
-
-    private static let pocket3VideoFormats: [VideoFormat] = [
-        VideoResolution.p1080, .p2_7K, .p4K,
-        .p1080_1x1, .p2160_1x1, .p3K_1x1,
-        .p1080_9x16, .p2_7K_9x16, .p3K_9x16,
-    ].flatMap { resolution in
-        VideoFrameRate.labeledVideo.map { VideoFormat(resolution: resolution, frameRate: $0) }
-    }
-
-    /// Accepted Pocket 3 SlowMo `0x02/0x18` pairs (4K 100/120, 2.7K 120, 1080 120/240).
-    private static let pocket3SlowMoFormats: [VideoFormat] = [
-        VideoFormat(resolution: .p4K, frameRate: .fps100),
-        VideoFormat(resolution: .p4K, frameRate: .fps120),
-        VideoFormat(resolution: .p2_7K, frameRate: .fps120),
-        VideoFormat(resolution: .p1080, frameRate: .fps120),
-        VideoFormat(resolution: .p1080, frameRate: .fps240),
-    ]
-
-    /// Accepted Pocket 3 Low-Light pairs: 1080 / 4K at 24 / 25 / 30. No 2.7K or square.
-    private static let pocket3LowLightFormats: [VideoFormat] = [
-        VideoResolution.p1080, .p4K,
-    ].flatMap { resolution in
-        [VideoFrameRate.fps24, .fps25, .fps30].map {
-            VideoFormat(resolution: resolution, frameRate: $0)
-        }
     }
 
     public static func parse(_ value: [UInt8]) -> [VideoFormat] {
@@ -368,26 +308,12 @@ public enum CamCapVideoFormat {
     ) -> [VideoFrameRate] {
         let rates = available.filter { $0.resolution == resolution }.map(\.frameRate)
         if rates.isEmpty {
-            // Read-only live rate. Do not offer 24–60 (or any other size) until
-            // camcap or a documented Pocket 3 fallback fills the table.
             return current.map { [$0] } ?? []
         }
         return rates
     }
 }
 
-/// `camcap_iso_auto_max` — Auto ISO ceiling table + color-mode base.
-///
-/// ```
-/// 02 | innerLen:u16-LE | count | count × IsoLimit | base:u16-LE
-/// ```
-/// Pocket 4 Pro Normal/HDR: `02 0b 00 08 02…09 64 00` → 100 + 200…25600.
-/// D-Log: `02 07 00 04 04…07 90 01` → 400 + 800…6400.
-/// D-Log2: `01 01 00 00` → no Auto.
-///
-/// Wheel lists stay on `ColorMode.isoAutoLimits` / `isoAutoBase(for:)`. Pocket 3
-/// / Pocket 4 Rec.709 labels use floor 50 even though this 4 Pro capture is 100.
-/// This parser pins the capture; it is not subscribed.
 public enum CamCapIsoAutoMax {
     public static let subscribeKey = "camcap_iso_auto_max"
 

@@ -472,6 +472,7 @@ class PocketCameraSession(context: Context) : CameraSessionSeam {
     }
 
     fun connect(camera: FoundCamera) {
+        if (camera.model.family != "nano") return
         if (_phase.value == ConnectionPhase.LIVE && connectedCamera?.id == camera.id &&
             !_recoveryState.value.isRecovering && !holdsMonitor
         ) {
@@ -1871,15 +1872,8 @@ class PocketCameraSession(context: Context) : CameraSessionSeam {
         }
     }
 
-    private fun liveViewEnableReceiver(camera: FoundCamera?): Int {
-        val model = camera?.model
-        if (model != null && model.liveViewEnableReceiver != 0x08) return model.liveViewEnableReceiver
-        if (model?.usesNanoLiveViewGate == true || model?.family == "nano") {
-            return CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_NANO
-        }
-        if (isNanoBody(camera)) return CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_NANO
-        return CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_POCKET
-    }
+    private fun liveViewEnableReceiver(camera: FoundCamera?): Int =
+        CameraCommands.LIVE_VIEW_ENABLE_RECEIVER_NANO
 
     private fun usesNanoLiveViewGate(camera: FoundCamera?): Boolean =
         camera?.model?.usesNanoLiveViewGate == true || isNanoBody(camera)
@@ -3100,7 +3094,7 @@ class PocketCameraSession(context: Context) : CameraSessionSeam {
             return
         }
         val cam = connectedCamera?.model
-        val family = cam?.family ?: "pocket"
+        val family = cam?.family ?: "nano"
         val allowed =
             CaptureLists.colorWheel(family, live.availableColorModes, cam?.name ?: "")
                 .map { it.first }

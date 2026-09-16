@@ -255,7 +255,7 @@ private fun LiveControlSheetContent(
     )
     val formatAspects = CaptureLists.formatAspects(status)
     val tabs = CaptureLists.modeTabs(sheet, status, offersIsoAuto, selectedAspect)
-    val bodyFamily = model.session.connectedCamera?.model?.family ?: "pocket"
+    val bodyFamily = model.session.connectedCamera?.model?.family ?: "nano"
     val bodyName = model.session.connectedCamera?.model?.name ?: ""
 
     // The shared drum reports one settled value. Dispatch here, with no second
@@ -1930,14 +1930,7 @@ object CaptureLists {
             CameraCommands.shootingModeCarousel(name).map {
                 CameraCommands.shootingModeLabel(it, name).orEmpty()
             }
-        val live = CameraCommands.shootingModeLabel(shootingMode, name) ?: return labels
-        if (shootingMode != CameraCommands.SHOOT_LIVE_PHOTO || live in labels) return labels
-        val photoIdx = labels.indexOf("Photo")
-        return if (photoIdx >= 0) {
-            labels.take(photoIdx + 1) + live + labels.drop(photoIdx + 1)
-        } else {
-            labels + live
-        }
+        return labels
     }
 
     fun shootingModeRaw(label: String, name: String?): Int? {
@@ -1951,11 +1944,11 @@ object CaptureLists {
 
     fun colorWheelLabels(
         status: CameraStatus,
-        family: String = "pocket",
+        family: String = "nano",
         name: String = "",
     ): List<String> = colorWheel(family, status.availableColorModes, name).map { it.second }
 
-    fun colorModeFromLabel(label: String, family: String = "pocket", name: String = ""): Int? {
+    fun colorModeFromLabel(label: String, family: String = "nano", name: String = ""): Int? {
         if (label == "Normal 8-bit") return CameraCommands.COLOR_NORMAL
         if (label == "D-Log M") return CameraCommands.COLOR_DLOG_M
         return colorWheel(family, name = name).firstOrNull { it.second == label }?.first

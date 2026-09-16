@@ -171,10 +171,10 @@ class CaptureQuickControlTest {
         commitCaptureQuickControl(format, format, "30p", enabled = true) { sends++ }
         assertEquals(1, sends)
 
-        val color = requireNotNull(recordingCategoryQuickControl(LiveSheet.COLOR, status, family = "pocket"))
-        assertEquals(CaptureLists.colorWheelLabels(status, "pocket"), color.options)
-        assertTrue(color.options.contains("Normal"))
-        assertEquals("Normal", color.selection)
+        val color = requireNotNull(recordingCategoryQuickControl(LiveSheet.COLOR, status, family = "nano"))
+        assertEquals(CaptureLists.colorWheelLabels(status, "nano"), color.options)
+        assertTrue(color.options.contains("Normal 8-bit"))
+        assertEquals("Normal 8-bit", color.selection)
 
         val mode = requireNotNull(recordingCategoryQuickControl(LiveSheet.MODE, status))
         assertEquals(CaptureLists.shootingModeLabels(null), mode.options)
@@ -182,7 +182,7 @@ class CaptureQuickControlTest {
         assertTrue("Photo" in mode.options)
         val photo = requireNotNull(
             recordingCategoryQuickControl(
-                LiveSheet.MODE, status.copy(shootingMode = CameraCommands.SHOOT_PHOTO_POCKET4)),
+                LiveSheet.MODE, status.copy(shootingMode = CameraCommands.SHOOT_PHOTO)),
         )
         commitCaptureQuickControl(mode, photo, "Photo", enabled = true) { sends++ }
         assertEquals(1, sends, "A changed shooting-mode source cannot commit")

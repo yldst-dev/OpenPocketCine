@@ -10,22 +10,6 @@ final class OperatorFacingCopyTests: XCTestCase {
         XCTAssertEqual(StartupConnectionCopy.shareDiagnostics, "Share Diagnostics")
     }
 
-    func testHeadTrackingIsExperimentalAndCalibrateIsOperatorFacing() {
-        XCTAssertEqual(LiveHeadTrackCalibrateButton.calibrateTitle, "Calibrate Head Lock")
-        XCTAssertEqual(LiveHeadTrackCalibrateButton.stopTitle, "STOP")
-        XCTAssertTrue(
-            SettingsHelpCopy.headTracking.hasPrefix("Experimental."),
-            "Settings help must lead with Experimental")
-        XCTAssertTrue(
-            SettingsHelpCopy.headTracking.contains("compass"),
-            "Settings help must describe the live compass control")
-        XCTAssertTrue(
-            SettingsHelpCopy.headTracking.contains("joystick"),
-            "Settings help must park Head Lock above the joystick")
-        XCTAssertFalse(
-            SettingsHelpCopy.headTracking.contains("centered above the bottom bars"))
-    }
-
     func testHelpCopyDoesNotNameSisterApps() {
         let facing = Self.operatorFacingCopy
         XCTAssertFalse(facing.isEmpty)
@@ -115,8 +99,6 @@ final class OperatorFacingCopyTests: XCTestCase {
             SettingsHelpCopy.controlRequests,
             SettingsHelpCopy.recordConfirmation,
             SettingsHelpCopy.haptics,
-            SettingsHelpCopy.headTracking,
-            LiveHeadTrackCalibrateButton.calibrateTitle,
             "Head Tracking (Experimental)",
             SettingsHelpCopy.joystickSensitivity,
             SettingsHelpCopy.virtualJoystickInvertPan,
@@ -179,13 +161,6 @@ final class OperatorFacingCopyTests: XCTestCase {
             ControlHud.gimbalHoldStill,
             ControlHud.programmedMoveNeedAB,
             ControlHud.gimbalNeedsCalibration,
-            LiveGimbalCopy.title,
-            LiveGimbalCopy.mode,
-            LiveGimbalCopy.speed,
-            LiveGimbalCopy.ramp,
-            LiveGimbalCopy.programmedMove,
-            LiveGimbalCopy.runMove,
-            LiveGimbalCopy.stopMove,
             LocalVPNFilter.wizardBanner,
             LocalVPNFilter.liveHint,
             LocalVPNFilter.joinWifiPhoneStep,

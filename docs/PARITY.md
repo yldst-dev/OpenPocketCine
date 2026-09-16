@@ -1,5 +1,20 @@
 # Operator parity
 
+## Nano-only scope
+
+Both shells discover and connect only to Osmo Nano. Saved non-Nano cameras are
+excluded from their connection lists. The live-enable receiver is `0x41` and
+the Nano gate remains paired with enable-once. Both color wheels expose Normal
+8-bit, Normal 10-bit and D-Log M. The only bundled manufacturer LUT is Nano
+D-Log M to Rec.709. Gimbal, head tracking, focus and camera zoom controls are
+not part of this profile. Pocket-specific format fallback tables and photo
+encodings are removed.
+
+The historical comparison rows below describe earlier multi-model builds;
+they do not expand the supported camera set. Physical regression of the
+Nano-only branch is pending on both platforms. Earlier device results are not
+proof of this refactor.
+
 iOS is the operator-proven baseline. Android matches operator-visible behavior
 unless a row lists an exception. GPU backends, Bluetooth stacks, and OS APIs may
 diverge. Shipping a one-platform operator-visible change without a row here is

@@ -43,9 +43,9 @@ final class PlaybackAssistTests: XCTestCase {
 
     func testPlaybackEffectsCarryMonitorColorMode() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         assist.togglePlayback(.zebra)
-        XCTAssertEqual(assist.playbackEffects.colorMode, .dLog2)
+        XCTAssertEqual(assist.playbackEffects.colorMode, .dLogM)
         XCTAssertTrue(assist.playbackEffects.zebra)
         XCTAssertTrue(assist.playbackEffects.needsOverlayFeed)
         XCTAssertFalse(assist.playbackEffects.replacesIdentityFeed)
@@ -66,9 +66,9 @@ final class PlaybackAssistTests: XCTestCase {
 
     func testPlaybackLUTReplacesIdentityOnceACubeIsArmed() {
         let assist = LiveAssistState()
-        assist.syncLUT(to: .dLog2)
+        assist.syncLUT(to: .dLogM)
         assist.togglePlayback(.lut)
-        guard BundledOfficialDJILUT.cube(.pocketDLog2) != nil else {
+        guard BundledOfficialDJILUT.cube(.nanoDLogM) != nil else {
             XCTFail("official D-Log2 cube must load from the app bundle")
             return
         }

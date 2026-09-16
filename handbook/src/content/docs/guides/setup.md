@@ -12,7 +12,7 @@ just check    # hygiene, markdown, links, secrets, swift test
 
 Run `just` with no arguments to list recipes. Shared protocol logic is tested
 without a camera (`just test` / `swift test`). Pairing and live view need a
-**physical** phone and an Osmo Pocket 4 / 4 Pro (Nano live view is AVC).
+**physical** phone and an Osmo Nano (AVC live view).
 
 ## iOS
 

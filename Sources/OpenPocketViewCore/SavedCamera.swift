@@ -185,7 +185,6 @@ public enum FoundCameraIdentity {
         let family = CameraBodyFamily.resolve(modelId: nil, name: modelName)
         let kind: String
         switch family {
-        case .pocket: kind = "Pocket"
         case .nano: kind = "Nano"
         case .other: kind = modelName
         }

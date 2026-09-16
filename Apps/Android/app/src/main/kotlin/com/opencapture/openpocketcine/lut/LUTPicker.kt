@@ -132,7 +132,7 @@ fun LUTPicker(model: AppModel, onClose: () -> Unit) {
         onExposure = { assist.updateLutExposure(it) },
         onArmLut = { assist.armLut() },
         colorMode = status.monitorColorMode,
-        family = model.session.connectedCamera?.model?.family ?: "pocket",
+        family = model.session.connectedCamera?.model?.family ?: "nano",
         cameraName = model.session.connectedCamera?.name,
         isPhoto = status.isPhoto,
     )
@@ -156,7 +156,7 @@ internal fun LUTPicker(
     onArmLut: () -> Unit = {},
     onClose: (() -> Unit)? = null,
     colorMode: Int = CameraCommands.COLOR_NORMAL,
-    family: String = "pocket",
+    family: String = "nano",
     cameraName: String? = null,
     isPhoto: Boolean = false,
     modifier: Modifier = Modifier,

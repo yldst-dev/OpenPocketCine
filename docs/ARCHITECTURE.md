@@ -1,6 +1,8 @@
 # Architecture
 
-OpenPocketCine is a shared Swift business/protocol core with native platform shells.
+OpenPocketCine is a shared Swift business/protocol core with native platform shells
+for Osmo Nano. The camera resolver and both BLE scanners admit only Nano; shared
+transport, image processing, playback and presentation utilities remain reusable.
 
 | Layer | Path | Purpose |
 | --- | --- | --- |
@@ -213,7 +215,7 @@ screens and workflows without copying them.
    the remote only. Bind and ACK details: [live-session](live-session.md).
 5. Enable live view **enable-once** after path + display are ready. Arm pktType
    `0x02` ingest on that write. Recover policy: [watchdog](feed-watchdog.md).
-6. Pocket 4 / 4 Pro: HEVC 720p. Nano: AVC/H.264 High 720p. Decoder setup and
+6. Nano: AVC/H.264 High 720p. Decoder setup and
    NAL latch: [live-session](live-session.md).
 
 ### Policy in Swift, I/O in the shells

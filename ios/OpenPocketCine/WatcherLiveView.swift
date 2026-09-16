@@ -134,7 +134,7 @@ struct WatcherLiveView: View {
     private func syncColor() {
         client.decoder.incomingColorMode = client.colorMode
         model.assist.syncLUT(
-            to: client.colorMode, family: client.state.isNano == true ? .nano : .pocket,
+            to: client.colorMode, family: client.state.isNano == true ? .nano : .nano,
             cameraName: client.state.cameraModel, persistLast: false)
     }
 

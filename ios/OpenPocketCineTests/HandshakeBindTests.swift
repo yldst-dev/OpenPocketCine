@@ -94,8 +94,8 @@ final class HandshakeBindTests: XCTestCase {
         session.isMultiviewBorrowed = true
         session.updateMultiview(
             camera: FoundCamera(
-                id: UUID(), name: "Pocket4Pro-Test",
-                model: .resolve(modelId: 0x22, name: "Pocket4Pro-Test"), modelId: 0x22),
+                id: UUID(), name: "OsmoNano-Test",
+                model: .resolve(modelId: 0x19, name: "OsmoNano-Test"), modelId: 0x19),
             driver: driver, status: CameraStatus())
         session.isMultiviewBorrowed = false
         defer {

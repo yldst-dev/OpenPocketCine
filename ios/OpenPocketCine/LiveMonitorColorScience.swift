@@ -38,7 +38,7 @@ enum LiveLUTResolver {
     static func resolve(
         selection: LUTSelection,
         colorMode: ColorMode?,
-        family: CameraBodyFamily = .pocket,
+        family: CameraBodyFamily = .nano,
         cameraName: String? = nil,
         hasCustomDLog: Bool,
         hasCustomDLog2: Bool,

@@ -39,51 +39,16 @@ object LutCatalog {
 
     fun creativeName(id: String): String? = creative.firstOrNull { it.id == id }?.title
 
-    /** Legacy app-authored Rec.709 conversions — hidden; reserved so they do not appear as extras. */
-    val officialBuiltInLooks: List<LutEntry> =
-        listOf(
-            LutEntry(
-                "officialDLog",
-                "D-Log → Rec.709",
-                LutCategory.DJI,
-                "DJI_Pocket4P_DLog_Rec709_33.cube",
-            ),
-            LutEntry(
-                "officialDLog2",
-                "D-Log2 → Rec.709",
-                LutCategory.DJI,
-                "DJI_Pocket4P_DLog2_Rec709_33.cube",
-            ),
-        )
+    val officialBuiltInLooks: List<LutEntry> = emptyList()
 
-    /** Manufacturer Rec.709 cubes (`OfficialDJILUT` on iOS). */
-    val officialDji: List<LutEntry> =
-        listOf(
-            LutEntry(
-                "djiDLog",
-                "D-Log → Rec.709",
-                LutCategory.DJI,
-                "DJI_Official_Pocket4P_DLog_Rec709_33.cube",
-            ),
-            LutEntry(
-                "djiDLog2",
-                "D-Log2 → Rec.709",
-                LutCategory.DJI,
-                "DJI_Official_Pocket4P_DLog2_Rec709_33.cube",
-            ),
-            LutEntry(
-                "djiDLogM",
-                "D-Log M → Rec.709",
-                LutCategory.DJI,
-                "DJI_Official_Nano_DLogM_Rec709_33.cube",
-            ),
-            LutEntry(
-                "djiAction6DLogM",
-                "Action 6 D-Log M → Rec.709",
-                LutCategory.DJI,
-                "DJI_Official_Action6_DLogM_Rec709_33.cube",
-            ),
-        )
+    val officialDji: List<LutEntry> = listOf(
+        LutEntry(
+            "djiDLogM",
+            "D-Log M → Rec.709",
+            LutCategory.DJI,
+            "DJI_Official_Nano_DLogM_Rec709_33.cube",
+        ),
+    )
 
     val shippedAssetFileNames: List<String>
         get() = (officialBuiltInLooks + officialDji).mapNotNull { it.fileName }

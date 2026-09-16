@@ -1,21 +1,8 @@
 import Foundation
 
-/// Decodes a DJI BLE advertisement's manufacturer payload (company id already stripped) into a
-/// classic model id. Ported from Osmosis `ble/BleAdvert.kt`.
-///
-/// DJI ships two advert formats. The newer one leaves the classic model byte at zero and puts a
-/// 16-bit product type deeper in — which is why an Osmo Pocket 4 Pro scans as `unknown(0x0000)`
-/// to anything that only reads the classic byte. Selector: bit 2 of payload byte 5.
-///
-/// iOS note: `CBAdvertisementDataManufacturerDataKey` gives the raw value with the 2-byte company
-/// id little-endian first. Strip those two bytes before calling `decode`.
 public enum BleAdvert {
     /// DJI ProductType -> classic model id (shipping products only, from Osmosis).
-    static let productTypeToModelId: [Int: Int] = [
-        40: 0x0006, 143: 0x0010, 231: 0x0012, 203: 0x0014, 235: 0x0015,
-        224: 0x0017, 223: 0x0018, 222: 0x0019, 145: 0x0020, 219: 0x0021,
-        218: 0x0022, 229: 0x0087,
-    ]
+    static let productTypeToModelId: [Int: Int] = [222: 0x0019]
 
     public struct Decoded: Equatable {
         public let modelId: Int?
