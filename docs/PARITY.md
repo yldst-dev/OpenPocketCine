@@ -20,6 +20,26 @@ unless a row lists an exception. GPU backends, Bluetooth stacks, and OS APIs may
 diverge. Shipping a one-platform operator-visible change without a row here is
 incomplete.
 
+## Local Mac validation
+
+The iOS app can be built locally for an Apple silicon Mac using the Designed
+for iPad/iPhone destination. This is an experimental validation path, not a
+qualified macOS release. On this host, camera Wi-Fi is selected manually in
+macOS settings. The shell waits for the existing camera subnet check and does
+not call the iOS hotspot configuration APIs or remove manually joined networks
+in the single-camera connection path. Multiview is not qualified on Mac.
+The pairing page explains this step. iPhone and Android keep their existing
+automatic camera Wi-Fi joins. On 2026-09-16, Nano discovery was observed in the
+local Mac app and the operator confirmed a successful physical connection.
+Recording, Photo, reconnect and sustained live-view performance on Mac remain
+unqualified. This confirmation does not qualify either phone platform.
+
+The Mac path checks the camera subnet, not the target SSID. Before connecting,
+the operator must check that any already-connected camera Wi-Fi belongs to the
+selected Nano. Connecting while still on another camera network can reach the
+wrong camera. Use this experimental path with 1 camera until target-network
+confirmation is implemented.
+
 ## Photo LUT View Assist
 
 Photo and Live Photo use Normal / Rec.709 for live LUT selection and image

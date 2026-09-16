@@ -39,5 +39,27 @@ verify pairing, reconnect, AVC picture, recording start/stop, Photo and color
 changes with a physical Nano and a real phone for each platform. Simulator and
 unit tests cannot prove the Bluetooth or camera Wi-Fi path.
 
-Physical regression of this Nano-only branch is pending. Earlier multi-model
-qualification does not qualify this refactor.
+Physical phone regression of this Nano-only branch is pending. Earlier
+multi-model qualification does not qualify this refactor.
+
+## Local Mac validation
+
+An Apple silicon Mac can run a locally signed iPad build. This path is
+experimental. It needs Bluetooth and local network permission. When the app
+reaches Join camera Wi-Fi, select the matching Nano network in the macOS Wi-Fi
+menu. Check the network name and password on the camera under Wireless
+Connection, then return to the app. It waits for the camera subnet before
+opening the video link. This manual path does not need the iOS Hotspot
+Configuration entitlement; the normal iPhone build still uses that capability.
+
+Keep the camera attached to the vision dock for the first pairing and approve
+any pairing request on its screen. Complete first-use activation in DJI Mimo
+before testing, then disconnect Mimo so it does not hold the camera session.
+On 2026-09-16, Nano discovery was observed in the local Mac app and the operator
+confirmed a successful physical connection. Recording, Photo, reconnect and
+sustained live-view performance still need separate verification.
+
+The Mac path does not automatically verify the target Wi-Fi name. If the Mac is
+already connected to another camera, disconnect that network before selecting
+the Nano in the app. Use this experimental path with 1 camera. Mac Multiview is
+not qualified.

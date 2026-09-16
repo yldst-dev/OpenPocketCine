@@ -46,6 +46,10 @@ enum WiFiJoiner {
         persist: Bool = false
     ) async throws {
         try Task.checkCancellation()
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            try await waitUntilCameraPathReady(timeout: CameraSoftAPSwitch.joinDeadlineSeconds)
+            return
+        }
         var kick = Set(knownOtherSSIDs.filter { !$0.isEmpty && $0 != ssid })
         leave(ssids: Array(kick))
         await leaveOtherOsmoSoftAPs(except: ssid)
@@ -102,6 +106,7 @@ enum WiFiJoiner {
     }
 
     static func currentSSID() async -> String? {
+        if ProcessInfo.processInfo.isiOSAppOnMac { return nil }
         #if targetEnvironment(simulator)
             return nil
         #else
@@ -120,6 +125,10 @@ enum WiFiJoiner {
         persist: Bool = false,
         timeout: Duration = .seconds(20)
     ) async throws {
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            try await waitUntilCameraPathReady(timeout: CameraSoftAPSwitch.joinDeadlineSeconds)
+            return
+        }
         let config = NEHotspotConfiguration(ssid: ssid, passphrase: passphrase, isWEP: false)
         // Join-once drops the hotspot when the app leaves the foreground; saved
         // cameras need the config to survive Control Center / background.
@@ -187,6 +196,7 @@ enum WiFiJoiner {
     }
 
     static func leave(ssid: String) {
+        if ProcessInfo.processInfo.isiOSAppOnMac { return }
         NEHotspotConfigurationManager.shared.removeConfiguration(forSSID: ssid)
     }
 
@@ -212,11 +222,13 @@ enum WiFiJoiner {
     }
 
     static func configuredSSIDs() async -> [String] {
-        (try? await awaitCallback(timeout: .seconds(3)) { completion in
-            NEHotspotConfigurationManager.shared.getConfiguredSSIDs { ssids in
-                completion(.success(ssids))
-            }
-        }) ?? []
+        if ProcessInfo.processInfo.isiOSAppOnMac { return [] }
+        return
+            (try? await awaitCallback(timeout: .seconds(3)) { completion in
+                NEHotspotConfigurationManager.shared.getConfiguredSSIDs { ssids in
+                    completion(.success(ssids))
+                }
+            }) ?? []
     }
 
     /// NEHotspot callbacks have no Swift task cancellation contract. Resolve
