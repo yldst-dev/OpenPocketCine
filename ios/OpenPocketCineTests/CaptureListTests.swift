@@ -85,20 +85,8 @@ final class CaptureListTests: XCTestCase {
         XCTAssertEqual(CaptureLists.isoMarkedLabels(from: status), ["1600"])
         status.shootingMode = Int(ShootingMode.photo.rawValue)
         XCTAssertTrue(CaptureLists.isoMarkedLabels(from: status).isEmpty)
-        status.shootingMode = Int(ShootingMode.livePhoto.rawValue)
-        XCTAssertTrue(status.isPhoto)
-        XCTAssertTrue(CaptureLists.isoMarkedLabels(from: status).isEmpty)
         XCTAssertEqual(CaptureLists.recordingCategories(isPhoto: true), [.mode])
-        XCTAssertEqual(
-            CaptureLists.recordingCategories(isPhoto: false), [.resolution, .color, .mode])
-        XCTAssertFalse(
-            CaptureLists.operatorShootingModes().contains(.livePhoto),
-            "Live Photo is camera-reported stills, not an unqualified MODE SET")
-        var live = CameraStatus()
-        live.shootingMode = Int(ShootingMode.livePhoto.rawValue)
-        XCTAssertEqual(
-            CaptureLists.operatorShootingModes(from: live).last { $0 == .livePhoto },
-            .livePhoto)
+        XCTAssertFalse(CaptureLists.operatorShootingModes().map(\.label).contains("Live Photo"))
         var leftover = CameraStatus()
         leftover.colorMode = .dLog2
         leftover.shootingMode = Int(ShootingMode.photo.rawValue)
@@ -190,24 +178,14 @@ final class CaptureListTests: XCTestCase {
         XCTAssertEqual(IsoLimit.max12800.rawValue, 0x08)
     }
 
-    func testPocket3IsoAutoRangesStartAt50() {
-        let p3 = CameraModel.resolve(modelId: 0x0020, name: nil)
-        let expected = [
-            "50–200", "50–400", "50–800", "50–1600",
-            "50–3200", "50–6400", "50–12800", "50–25600",
-        ]
-        var normal = CameraStatus()
-        normal.colorMode = .normal
-        XCTAssertEqual(CaptureLists.isoAutoLabels(from: normal, model: p3), expected)
-        XCTAssertEqual(CaptureLists.isoLimit(from: "50–400", status: normal, model: p3), .max400)
-        var live = CameraStatus()
-        live.colorMode = .normal
-        live.isoLimit = .max400
-        XCTAssertEqual(CaptureLists.isoAutoLabel(from: live, model: p3), "50–400")
-        let p4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        XCTAssertEqual(CaptureLists.isoAutoLabels(from: normal, model: p4).first, "50–200")
-        let p4p = CameraModel.resolve(modelId: 0x0022, name: nil)
-        XCTAssertEqual(CaptureLists.isoAutoLabels(from: normal, model: p4p).first, "100–200")
+    func testNanoIsoAutoRangesStartAt100() {
+        let nano = CameraModel.default
+        var status = CameraStatus()
+        status.colorMode = .normal
+        XCTAssertEqual(CaptureLists.isoAutoLabels(from: status, model: nano).first, "100–200")
+        XCTAssertEqual(CaptureLists.isoLimit(from: "100–400", status: status, model: nano), .max400)
+        status.isoLimit = .max400
+        XCTAssertEqual(CaptureLists.isoAutoLabel(from: status, model: nano), "100–400")
     }
 
     func testEvLabelsThirdStopsFromMinus3ToPlus3() {

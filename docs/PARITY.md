@@ -1,9 +1,44 @@
 # Operator parity
 
+## Nano-only scope
+
+Both shells discover and connect only to Osmo Nano. Saved non-Nano cameras are
+excluded from their connection lists. The live-enable receiver is `0x41` and
+the Nano gate remains paired with enable-once. Both color wheels expose Normal
+8-bit, Normal 10-bit and D-Log M. The only bundled manufacturer LUT is Nano
+D-Log M to Rec.709. Gimbal, head tracking, focus and camera zoom controls are
+not part of this profile. Pocket-specific format fallback tables and photo
+encodings are removed.
+
+The historical comparison rows below describe earlier multi-model builds;
+they do not expand the supported camera set. Physical regression of the
+Nano-only branch is pending on both platforms. Earlier device results are not
+proof of this refactor.
+
 iOS is the operator-proven baseline. Android matches operator-visible behavior
 unless a row lists an exception. GPU backends, Bluetooth stacks, and OS APIs may
 diverge. Shipping a one-platform operator-visible change without a row here is
 incomplete.
+
+## Local Mac validation
+
+The iOS app can be built locally for an Apple silicon Mac using the Designed
+for iPad/iPhone destination. This is an experimental validation path, not a
+qualified macOS release. On this host, camera Wi-Fi is selected manually in
+macOS settings. The shell waits for the existing camera subnet check and does
+not call the iOS hotspot configuration APIs or remove manually joined networks
+in the single-camera connection path. Multiview is not qualified on Mac.
+The pairing page explains this step. iPhone and Android keep their existing
+automatic camera Wi-Fi joins. On 2026-09-16, Nano discovery was observed in the
+local Mac app and the operator confirmed a successful physical connection.
+Recording, Photo, reconnect and sustained live-view performance on Mac remain
+unqualified. This confirmation does not qualify either phone platform.
+
+The Mac path checks the camera subnet, not the target SSID. Before connecting,
+the operator must check that any already-connected camera Wi-Fi belongs to the
+selected Nano. Connecting while still on another camera network can reach the
+wrong camera. Use this experimental path with 1 camera until target-network
+confirmation is implemented.
 
 ## Photo LUT View Assist
 

@@ -3,6 +3,11 @@ title: iOS app
 description: SwiftUI iPhone and iPad shell. Physical device for BLE and camera Wi-Fi. TestFlight is the public beta.
 ---
 
+This branch supports [Osmo Nano only](../guides/nano/). Older descriptions
+of Pocket controls and qualification below are historical and do not apply to
+the Nano profile. Gimbal, head tracking, autofocus, camera zoom and Pocket LUTs
+are excluded. Physical verification of this branch is pending.
+
 The production iOS app is a universal iPhone and iPad SwiftUI shell in
 `ios/OpenPocketCine/`. It is the operator-proven datalink. Generate the Xcode
 project with XcodeGen — see [Setup](../guides/setup/).

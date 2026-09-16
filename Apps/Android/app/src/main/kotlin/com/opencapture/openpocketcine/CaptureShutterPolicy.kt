@@ -43,9 +43,6 @@ internal object CaptureShutterPolicy {
      * Pocket 3 TimeLapse start/stop is `0x02/0x01` `01`/`00`, not Video `0x02/0x02`.
      * Pocket 4 / 4 Pro TimeLapse stays Video record until a later survey.
      */
-    fun usesShutterTriggerOnPocket3(shootingMode: Int, cameraName: String?): Boolean =
-        shootingMode == CameraCommands.SHOOT_TIMELAPSE &&
-            CameraModel.looksLikePocket3(cameraName.orEmpty())
 
     /** JNI extra for command 36. Empty stays start `01` in the facade. */
     fun shootPhotoExtra(start: Boolean): String = if (start) "1" else "0"
@@ -55,7 +52,6 @@ internal object CaptureShutterPolicy {
     fun captureKind(shootingMode: Int, cameraName: String?): CaptureKind =
         when {
             isStillCapture(shootingMode) -> CaptureKind.PHOTO
-            usesShutterTriggerOnPocket3(shootingMode, cameraName) -> CaptureKind.SHUTTER_TRIGGER
             else -> CaptureKind.VIDEO_RECORD
         }
 

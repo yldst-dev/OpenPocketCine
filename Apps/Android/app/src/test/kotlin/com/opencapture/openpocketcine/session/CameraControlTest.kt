@@ -35,24 +35,6 @@ class CameraControlTest {
     }
 
     @Test
-    fun pocket3PickerFallbackIncludesNormalVideoSizesOnly() {
-        val model = CameraModel(name = "Osmo Pocket 3")
-        val formats = VideoFormat.pickerFormats(emptyList(), model, CameraCommands.SHOOT_VIDEO)
-        assertTrue(VideoFormat.resolutions(formats, VideoResolution.P4K, VideoAspect.SIXTEEN_NINE).contains(VideoResolution.P2_7K))
-        assertTrue(VideoFormat.resolutions(formats, null, VideoAspect.NINE_SIXTEEN).contains(VideoResolution.P3K_9X16))
-        assertTrue(VideoFormat.resolutions(formats, null, VideoAspect.ONE_ONE).contains(VideoResolution.P3K_1X1))
-        assertTrue(!VideoFormat.aspects(formats, null).contains(VideoAspect.FOUR_THREE))
-        val reported = listOf(VideoFormat(VideoResolution.P4K, VideoFrameRate.FPS25))
-        assertEquals(reported, VideoFormat.pickerFormats(reported, model, 1))
-        for (mode in listOf(-1, 2, 26)) {
-            assertTrue(VideoFormat.pickerFormats(emptyList(), model, mode).isEmpty())
-        }
-        for (name in listOf("Osmo Pocket 4 Pro", "Osmo Nano", "Unknown")) {
-            assertTrue(VideoFormat.pickerFormats(emptyList(), CameraModel(name), 1).isEmpty())
-        }
-    }
-
-    @Test
     fun shutterIsU16DenomOr8000() {
         val p = CameraCommands.shutter(1600)
         assertEquals(7, p.size)
@@ -164,7 +146,7 @@ class CameraControlTest {
     @Test
     fun imageEffectParsesWhiteBalanceLikeIos() {
         val effect = ByteArray(16)
-        effect[2] = 0x3F
+        effect[2] = 0x00
         effect[4] = CameraCommands.WB_CUSTOM.toByte()
         effect[5] = 0x1E
         effect[6] = 0x00
@@ -331,80 +313,6 @@ class CameraControlTest {
             listOf(VideoResolution.P1080, VideoResolution.P4K),
             VideoFormat.resolutions(emptyList(), VideoResolution.P4K),
         )
-    }
-
-    @Test
-    fun zoomStopsFollowTheBody() {
-        val pro = CameraModel(name = "Osmo Pocket 4 Pro", family = "pocket")
-        val pocket4 = CameraModel(name = "Osmo Pocket 4", family = "pocket")
-        val pocket3 = CameraModel(name = "Osmo Pocket 3", family = "pocket")
-        val nano = CameraModel(name = "Osmo Nano", family = "nano")
-        assertEquals(listOf(1.0, 3.0, 6.0, 12.0), pro.activeZoomStops())
-        assertEquals(listOf(1.0, 2.0, 4.0), pocket4.activeZoomStops())
-        assertEquals(listOf(1.0, 2.0, 4.0), pocket3.activeZoomStops())
-        assertEquals(listOf(1.0), nano.activeZoomStops())
-        assertEquals(
-            listOf(1.0, 2.0),
-            pocket3.activeZoomStops(CameraCommands.RES_4K, CameraCommands.SHOOT_VIDEO),
-        )
-        assertEquals(
-            listOf(1.0, 2.0, 4.0),
-            pocket4.activeZoomStops(CameraCommands.RES_4K, CameraCommands.SHOOT_VIDEO),
-        )
-        assertEquals(
-            listOf(1.0, 3.0),
-            pro.activeZoomStops(CameraCommands.RES_4K, CameraCommands.SHOOT_SLOWMO),
-        )
-        assertEquals(
-            listOf(1.0),
-            pocket4.activeZoomStops(CameraCommands.RES_4K, CameraCommands.SHOOT_SLOWMO),
-        )
-        assertEquals(
-            listOf(
-                CameraCommands.COLOR_NORMAL,
-                CameraCommands.COLOR_HDR,
-                CameraCommands.COLOR_DLOG,
-                CameraCommands.COLOR_DLOG2,
-            ),
-            CameraModel.colorModesFor(pro.name, "pocket"),
-        )
-        assertEquals(
-            listOf(
-                CameraCommands.COLOR_NORMAL,
-                CameraCommands.COLOR_HDR,
-                CameraCommands.COLOR_DLOG,
-            ),
-            CameraModel.colorModesFor(pocket4.name, "pocket"),
-        )
-        assertEquals(
-            listOf(
-                CameraCommands.COLOR_NORMAL,
-                CameraCommands.COLOR_HDR,
-                CameraCommands.COLOR_DLOG_M,
-            ),
-            CameraModel.colorModesFor(pocket3.name, "pocket"),
-        )
-        assertTrue(CameraCommands.COLOR_DLOG2 !in CameraModel.colorModesFor(pocket3.name, "pocket"))
-        assertTrue(CameraCommands.COLOR_DLOG !in CameraModel.colorModesFor(pocket3.name, "pocket"))
-        assertTrue(
-            CameraCommands.COLOR_DLOG2 in CameraModel.colorModesFor("OsmoPocket4P-ABCD", "pocket"),
-        )
-        assertTrue(
-            CameraCommands.COLOR_DLOG2 !in CameraModel.colorModesFor("OsmoPocket4-ABCD", "pocket"),
-        )
-        assertEquals(
-            listOf(
-                CameraCommands.COLOR_NORMAL,
-                CameraCommands.COLOR_HDR,
-                CameraCommands.COLOR_DLOG_M,
-            ),
-            CameraModel.colorModesFor("OsmoPocket3-ABCD", "pocket"),
-        )
-        val fromJson =
-            CameraModel.fromJson(
-                """{"name":"OsmoPocket4P-ABCD","family":"pocket","zoomStops":[1,3,6,12]}""",
-            )
-        assertEquals(listOf(1.0, 3.0, 6.0, 12.0), fromJson.zoomStops)
     }
 
     @Test
@@ -984,85 +892,13 @@ class CameraControlTest {
     @Test
     fun colorModePayloadMatchesIosBytes() {
         assertEquals(0x42, CameraCommands.CMD_COLOR)
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL).contentEquals(byteArrayOf(0x3F)))
+        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL).contentEquals(byteArrayOf(0x00)))
         assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_HDR).contentEquals(byteArrayOf(0x3C)))
         assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG).contentEquals(byteArrayOf(0x17)))
         assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG2).contentEquals(byteArrayOf(0x41)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL10).contentEquals(byteArrayOf(0x3D)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG_M).contentEquals(byteArrayOf(0x00)))
+        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL10).contentEquals(byteArrayOf(0x3F)))
+        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG_M).contentEquals(byteArrayOf(0x3D)))
         assertEquals(0x0242, SwiftCore.waitKey(SwiftCore.CMD_SET_COLOR_MODE))
-    }
-
-    @Test
-    fun pocket3ColorWireSwapsNormalAndDLogM() {
-        val p3 = "Osmo Pocket 3"
-        val muse = "Xtra Muse"
-        val p4 = "Osmo Pocket 4"
-        val nano = "Osmo Nano"
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL, p3).contentEquals(byteArrayOf(0x00)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG_M, p3).contentEquals(byteArrayOf(0x3D)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_HDR, p3).contentEquals(byteArrayOf(0x3C)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL, muse).contentEquals(byteArrayOf(0x00)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL, p4).contentEquals(byteArrayOf(0x3F)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL, nano).contentEquals(byteArrayOf(0x00)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_NORMAL10, nano).contentEquals(byteArrayOf(0x3F)))
-        assertTrue(CameraCommands.colorMode(CameraCommands.COLOR_DLOG_M, nano).contentEquals(byteArrayOf(0x3D)))
-        assertEquals(CameraCommands.COLOR_NORMAL, CameraCommands.parseColorMode(0x00, p3))
-        assertEquals(CameraCommands.COLOR_DLOG_M, CameraCommands.parseColorMode(0x3D, p3))
-        assertEquals(CameraCommands.COLOR_HDR, CameraCommands.parseColorMode(0x3C, p3))
-        assertEquals(CameraCommands.COLOR_NORMAL, CameraCommands.parseColorMode(0x00, nano))
-        assertEquals(CameraCommands.COLOR_NORMAL10, CameraCommands.parseColorMode(0x3F, nano))
-        assertEquals(CameraCommands.COLOR_DLOG_M, CameraCommands.parseColorMode(0x3D, nano))
-        assertEquals(0x00, CameraCommands.wireColorMode(CameraCommands.COLOR_NORMAL, p3))
-        assertEquals(0x3D, CameraCommands.wireColorMode(CameraCommands.COLOR_DLOG_M, p3))
-        assertEquals(0x00, CameraCommands.wireColorMode(CameraCommands.COLOR_NORMAL, "", "nano"))
-        assertEquals(0x3F, CameraCommands.wireColorMode(CameraCommands.COLOR_NORMAL10, "", "nano"))
-        assertEquals(0x3D, CameraCommands.wireColorMode(CameraCommands.COLOR_DLOG_M, "", "nano"))
-        assertEquals(CameraCommands.COLOR_NORMAL, CameraCommands.parseColorMode(0x00, "", "nano"))
-        assertEquals(CameraCommands.COLOR_NORMAL10, CameraCommands.parseColorMode(0x3F, "", "nano"))
-        assertEquals(CameraCommands.COLOR_DLOG_M, CameraCommands.parseColorMode(0x3D, "", "nano"))
-
-        val effect = ByteArray(16)
-        effect[2] = 0x00
-        assertEquals(
-            CameraCommands.COLOR_NORMAL,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), p3).colorMode,
-        )
-        effect[2] = 0x3D
-        assertEquals(
-            CameraCommands.COLOR_DLOG_M,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), p3).colorMode,
-        )
-        effect[2] = 0x00
-        assertEquals(
-            CameraCommands.COLOR_NORMAL,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), nano).colorMode,
-        )
-        effect[2] = 0x3F.toByte()
-        assertEquals(
-            CameraCommands.COLOR_NORMAL10,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), nano).colorMode,
-        )
-        effect[2] = 0x3D.toByte()
-        assertEquals(
-            CameraCommands.COLOR_DLOG_M,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), nano).colorMode,
-        )
-        effect[2] = 0x00
-        assertEquals(
-            CameraCommands.COLOR_NORMAL,
-            StatusExtras.applyImageEffect(effect, CameraStatus(), "", "nano").colorMode,
-        )
-
-        val cap = hex("01040003003C3D")
-        assertEquals(
-            listOf(
-                CameraCommands.COLOR_NORMAL,
-                CameraCommands.COLOR_HDR,
-                CameraCommands.COLOR_DLOG_M,
-            ),
-            CameraCommands.parseColorModes(cap, p3),
-        )
     }
 
     @Test
@@ -1167,21 +1003,6 @@ class CameraControlTest {
     }
 
     @Test
-    fun cameraModelJsonUsesPocketDefaults() {
-        val parsed =
-            CameraModel.fromJson(
-                """{"name":"Osmo Pocket 4","datalinkPort":9004,"tcpPoke":true,"wpa3":false,"verified":true,"isDrone":false,"pairingToken":"osmo"}""",
-            )
-        assertEquals("pocket", parsed.family)
-        assertEquals(8, parsed.liveViewEnableReceiver)
-        assertEquals(false, parsed.usesNanoLiveViewGate)
-        assertEquals(true, parsed.supportsTapFocus)
-        assertEquals(true, parsed.supportsFocusMode)
-        assertEquals(true, parsed.usesCapturedLiveEnable)
-        assertEquals(false, parsed.needsFirstPictureFormatPoke)
-    }
-
-    @Test
     fun cameraModelJsonParsesNanoFields() {
         val parsed =
             CameraModel.fromJson(
@@ -1193,30 +1014,6 @@ class CameraControlTest {
         assertEquals(false, parsed.supportsTapFocus)
         assertEquals(false, parsed.supportsFocusMode)
         assertEquals(false, parsed.needsFirstPictureFormatPoke)
-    }
-
-    @Test
-    fun cameraModelJsonParsesPocket3FormatPoke() {
-        val parsed =
-            CameraModel.fromJson(
-                """{"name":"Osmo Pocket 3","family":"pocket","needsFirstPictureFormatPoke":true}""",
-            )
-        assertEquals(true, parsed.needsFirstPictureFormatPoke)
-        val byName =
-            CameraModel.fromJson(
-                """{"name":"OsmoPocket3-AAAA","family":"pocket"}""",
-            )
-        assertEquals(true, byName.needsFirstPictureFormatPoke)
-        assertEquals(true, CameraModel.looksLikePocket3("Osmo Pocket 3"))
-        assertEquals(false, CameraModel.looksLikePocket3("Osmo Pocket 4"))
-        assertEquals(50, CameraModel.isoAutoRangeFloorFor("Osmo Pocket 3"))
-        assertEquals(50, CameraModel.isoAutoRangeFloorFor("OsmoPocket3-AAAA"))
-        assertEquals(50, CameraModel.isoAutoRangeFloorFor("Xtra Muse"))
-        assertEquals(50, CameraModel.isoAutoRangeFloorFor("Osmo Pocket 4"))
-        assertEquals(100, CameraModel.isoAutoRangeFloorFor("Osmo Pocket 4 Pro"))
-        assertEquals(100, CameraModel.isoAutoRangeFloorFor("OsmoPocket4P-AAAA"))
-        assertEquals(100, CameraModel.isoAutoRangeFloorFor("DJI Osmo camera"))
-        assertEquals(50, parsed.isoAutoRangeFloor)
     }
 
     @Test

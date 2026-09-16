@@ -289,7 +289,7 @@ final class FalseColorAssistTests: XCTestCase {
         let g = Float(MonitorTransfer.dlog2.middleGrayEncoded)
         let pre = PocketFalseColorMap.overlayPaintCube(scale: .stops, transfer: .dlog2)
             .map(red: g, green: g, blue: g)
-        guard let look = BundledPocketLUT.cube(.dLog2ToRec709) else {
+        guard let look = BundledOfficialDJILUT.cube(.nanoDLogM) else {
             throw XCTSkip("official D-Log2 cube must load")
         }
         let graded = look.map(red: g, green: g, blue: g)

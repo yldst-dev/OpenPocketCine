@@ -207,48 +207,7 @@ final class CameraSession {
 
     private(set) var gimbalControlSceneActive = true
     @ObservationIgnored private var nativeTargetGeneration: UInt64 = 0
-    @ObservationIgnored private var nativeHeadToken: UInt64?
     @ObservationIgnored private var nativeMoveToken: UInt64?
-
-    func beginNativeHeadTrack() -> UInt64? {
-        guard phase == .live, !sessionRecovery.isRecovering, gimbalControlSceneActive,
-            !isFeedWarming, hasGimbal, !isLocked, !gimbalMoveRunning, !gimbalStickHeld,
-            !isBrowsingMedia, !isLiveVideoStale, freshGimbalWaypoint != nil,
-            let datalink
-        else { return nil }
-        cancelNativeHeadTrack()
-        restGimbalStickWire()
-        prepHeadTrackGimbal()
-        nativeTargetGeneration &+= 1
-        nativeHeadToken = nativeTargetGeneration
-        datalink.beginNativeTargets(token: nativeTargetGeneration)
-        return nativeTargetGeneration
-    }
-
-    func updateNativeHeadTrack(target: GimbalWaypoint, token: UInt64) -> Bool {
-        guard phase == .live, !sessionRecovery.isRecovering, gimbalControlSceneActive,
-            nativeHeadToken == token, !gimbalMoveRunning, !gimbalStickHeld,
-            !isLocked, !isBrowsingMedia, !isLiveVideoStale, let live = freshGimbalWaypoint,
-            GimbalMoveEngine.canSendNativeTarget(from: live, to: target),
-            let frame = Commands.gimbalTimedTarget(
-                waypoint: target,
-                duration: HeadTrackNative.commandDuration), let datalink
-        else {
-            endNativeHeadTrack(token: token)
-            return false
-        }
-        return datalink.noteNativeTarget(frame, token: token)
-    }
-
-    func endNativeHeadTrack(token: UInt64) {
-        guard nativeHeadToken == token else { return }
-        nativeHeadToken = nil
-        datalink?.endNativeTargets(token: token)
-    }
-
-    private func cancelNativeHeadTrack() {
-        if let token = nativeHeadToken { endNativeHeadTrack(token: token) }
-    }
 
     var overlayGimbalWaypoint: GimbalWaypoint? {
         guard !isLiveVideoStale,
@@ -628,6 +587,7 @@ final class CameraSession {
     }
 
     private func connect(_ camera: FoundCamera, preserveMonitor: Bool) {
+        guard camera.model.family == .nano else { return }
         let camera = camera.enriched(
             from: SavedCameraStore.load().first { $0.id == camera.id })
         if case .live = phase, connectedCamera?.id == camera.id, !sessionRecovery.isRecovering {
@@ -1286,12 +1246,7 @@ final class CameraSession {
                 onSettle: { [weak self] _ in self?.controlBusy = false })
             return
         }
-        let name: String
-        if connectedCamera?.model.isPocket3 == true, mode?.usesShutterTriggerOnPocket3 == true {
-            name = starting ? "TimeLapse" : "Stop"
-        } else {
-            name = starting ? "Record" : "Stop"
-        }
+        let name = starting ? "Record" : "Stop"
         fireCamera(
             frame, name: name, expect: .recording(starting),
             onSettle: { [weak self] _ in self?.controlBusy = false }
@@ -2435,7 +2390,6 @@ final class CameraSession {
             return
         }
         let restZone = linear ? GimbalStick.deadzone : mapping.deadzone
-        if !linear, hypot(x, y) > restZone { cancelNativeHeadTrack() }
         if isLiveVideoStale, !moveDriving {
             endGimbalStick(cancelMove: true)
             return
@@ -2534,7 +2488,6 @@ final class CameraSession {
 
     /// Send center and stop the stream. Always fire — the camera needs rest.
     func endGimbalStick(cancelMove: Bool = false) {
-        if cancelMove { cancelNativeHeadTrack() }
         // Programmed movement owns the gimbal until it rests itself.
         if moveDriving && !cancelMove { return }
         if gimbalMoveRunning {
@@ -2665,7 +2618,6 @@ final class CameraSession {
         }
         moveEngine = validation
         controlNote = nil
-        cancelNativeHeadTrack()
         restGimbalStickWire()
         gimbalMoveRunning = true
         gimbalMovePaused = false
@@ -2746,7 +2698,6 @@ final class CameraSession {
     }
 
     func cancelProgrammedMove() {
-        cancelNativeHeadTrack()
         let hadStream = nativeMoveToken != nil
         endNativeMoveTargets()
         moveGeneration &+= 1
@@ -3883,7 +3834,7 @@ final class CameraSession {
         }
         datalink?.startLiveView(
             receiver: connectedCamera?.model.liveViewEnableReceiver
-                ?? Commands.liveViewEnableReceiverPocket)
+                ?? Commands.liveViewEnableReceiverNano)
         return true
     }
 

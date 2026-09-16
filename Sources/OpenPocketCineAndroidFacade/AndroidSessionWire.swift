@@ -73,7 +73,6 @@ public enum AndroidSessionWire {
             .replacingOccurrences(of: "\"", with: "\\\"")
         let family: String
         switch model.family {
-        case .pocket: family = "pocket"
         case .nano: family = "nano"
         case .other: family = "other"
         }
@@ -440,7 +439,7 @@ public enum AndroidSessionWire {
         case .enterPlayback:
             return Commands.enterPlayback(seq: seq)
         case .liveViewEnable:
-            let receiver = parseUInt8(extra) ?? Commands.liveViewEnableReceiverPocket
+            let receiver = parseUInt8(extra) ?? Commands.liveViewEnableReceiverNano
             return Commands.liveViewEnable(seq: seq, receiver: receiver)
         case .recordStart:
             return Commands.recordStart(seq: seq)

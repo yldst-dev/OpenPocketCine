@@ -1,6 +1,7 @@
 package com.opencapture.openpocketcine.pairing
 
 import android.content.Context
+import com.opencapture.openpocketcine.session.CameraModel
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -69,6 +70,7 @@ class SharedPreferencesSavedCameraStore(context: Context) {
     fun load(): List<SavedCamera> {
         val raw = prefs.getString(RECORDS_KEY, null) ?: return emptyList()
         return runCatching { decode(raw) }.getOrElse { emptyList() }.let(SavedCameras::canonicalized)
+            .filter { CameraModel.looksLikeNano(it.modelName) }
     }
 
     fun save(records: List<SavedCamera>) {

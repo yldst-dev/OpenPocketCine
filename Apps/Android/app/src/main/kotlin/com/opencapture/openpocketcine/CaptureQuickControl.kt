@@ -55,7 +55,7 @@ internal fun captureQuickControl(sheet: LiveSheet, status: CameraStatus, model: 
             else chrome(MonitorQuickControl(CaptureLists.audioChannelLabels, CaptureLists.audioChannelLabel(status.audioChannel).orEmpty()))
         }
         LiveSheet.FORMAT, LiveSheet.COLOR, LiveSheet.MODE -> {
-            val family = model.session.connectedCamera?.model?.family ?: "pocket"
+            val family = model.session.connectedCamera?.model?.family ?: "nano"
             recordingCategoryQuickControl(sheet, status, body, family)?.let(::chrome)
         }
     }
@@ -66,7 +66,7 @@ internal fun recordingCategoryQuickControl(
     sheet: LiveSheet,
     status: CameraStatus,
     bodyName: String = "",
-    family: String = "pocket",
+    family: String = "nano",
 ): MonitorQuickControl? =
     when (sheet) {
         LiveSheet.FORMAT -> {
@@ -165,7 +165,7 @@ internal fun applyCaptureQuickControl(sheet: LiveSheet, value: String, status: C
             CaptureLists.nextVideoFormat(formatStatus, tab, value, fromDrum = true, aspect)?.let(model::setVideoFormat)
         }
         LiveSheet.COLOR -> CaptureLists.applyColorDrum(
-            label = value, family = model.session.connectedCamera?.model?.family ?: "pocket",
+            label = value, family = model.session.connectedCamera?.model?.family ?: "nano",
             status = status, hopEnabled = model.nativeISOHopEnabled,
             name = model.session.connectedCamera?.model?.name.orEmpty(),
         )?.let { model.setColorMode(it.colorMode) }

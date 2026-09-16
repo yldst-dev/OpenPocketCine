@@ -12,7 +12,6 @@ struct LiveViewScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var interfaceLocked = false
     @State private var gamepad = GimbalGamepadBridge()
-    @State private var headphones = HeadphoneMotionBridge()
     @State private var orientationObserver = InterfaceOrientationObserver()
     @State private var topMenu: LiveTopMenu?
     @State private var topPickerFrames: [LiveTopMenu: CGRect] = [:]
@@ -54,7 +53,6 @@ struct LiveViewScreen: View {
         return (showsStatusBar && topMenu != nil)
             || (model.liveOperatorPanel == nil && !model.assist.gradesClip
                 && model.assist.configureTool != nil)
-            || (showsGimbalButton && model.liveGimbalPanel == .sheet)
             || model.captureSheet != nil
             || zoomDialMounted
     }
@@ -129,7 +127,6 @@ struct LiveViewScreen: View {
             model.session.decoder.startSimulatorSampleIfNeeded()
             model.session.isLocked = interfaceLocked
             gamepad.attach(model: model)
-            headphones.attach(model: model)
         }
         .onDisappear {
             model.captureDrum = nil
@@ -138,7 +135,6 @@ struct LiveViewScreen: View {
             zoomDismissTask?.cancel()
             zoomDismissTask = nil
             zoomDialMounted = false
-            headphones.detach()
             gamepad.detach()
             model.session.decoder.stopSimulatorSample()
         }
@@ -152,8 +148,6 @@ struct LiveViewScreen: View {
                 model.captureSheet = nil
                 model.assist.configureTool = nil
                 gamepad.noteBlocked()
-                headphones.noteBlocked()
-                model.liveGimbalPanel = .none
                 model.session.cancelProgrammedMove()
             }
         }
@@ -166,23 +160,9 @@ struct LiveViewScreen: View {
                 model.assist.configureTool = nil
                 closeZoomDial()
                 gamepad.noteBlocked()
-                headphones.noteBlocked()
-                model.liveGimbalPanel = .none
-            } else {
-                headphones.sync()
             }
         }
-        .onChange(of: model.headTrackingEnabled) { _, _ in
-            headphones.sync()
-        }
-        .onChange(of: model.isEditingChrome) { _, editing in
-            if editing {
-                headphones.noteBlocked()
-                model.liveGimbalPanel = .none
-            } else {
-                headphones.sync()
-            }
-        }
+
         .onChange(of: model.session.gimbalLimitPulse) { _, _ in
             gamepad.pulseLimit(
                 model.session.gimbalLimitContact,
@@ -221,9 +201,7 @@ struct LiveViewScreen: View {
         .onChange(of: model.assist.configureTool) { _, value in
             if value != nil { selectOverlay(.assist) }
         }
-        .onChange(of: model.liveGimbalPanel) { _, value in
-            if value != .none { selectOverlay(.gimbal) }
-        }
+
         .sheet(isPresented: Bindable(model.assist).showLUTPicker) {
             LUTPicker(assist: model.assist)
         }
@@ -319,19 +297,6 @@ struct LiveViewScreen: View {
 
             // The expanded Motion editor owns its outside-tap minimization
             // region above camera controls, including the stable Record layer.
-            if showsGimbalButton, chromeInteractive, !interfaceLocked,
-                model.liveOperatorPanel == nil
-            {
-                LiveGimbalOverlay(
-                    layout: layout, feed: layout.onFeed,
-                    joystickBounds: model.chromeSectionMounts(.gimbalStick)
-                        && !captureControlsPresented
-                        ? Self.cgRect(self.gimbalCluster(layout).stick) : .zero
-                )
-                .environment(\.interfaceLocked, interfaceLocked)
-                .allowsHitTesting(model.liveChromeInteractive && !zoomDialMounted)
-                .zIndex(15)
-            }
 
             if let panel = model.liveOperatorPanel, !model.isEditingChrome {
                 operatorPanelCover(panel, layout: layout)
@@ -429,19 +394,6 @@ struct LiveViewScreen: View {
 
             // Pinch + DISP swipe (OpenZCine feed well). Under chip + scopes;
             // chrome `Color.clear` must not cover this well.
-            LiveZoomPinchWell(
-                feed: layout.onFeed,
-                chip: Self.cgRect(self.gimbalCluster(layout).zoom),
-                stick: Self.cgRect(self.gimbalCluster(layout).stick),
-                gimbalButton: Self.cgRect(self.gimbalCluster(layout).controls),
-                reset: model.session.isFocusResetAvailable ? layout.focusReset : .zero,
-                cancel: trackingCancelRect(in: layout),
-                calibrate: model.headTrackingEnabled
-                    && OsmoMonitorPresentation.capabilities(model.session).headTracking
-                    ? layout.gimbalCalibrate : .zero,
-                enabled: !interfaceLocked && model.liveOperatorPanel == nil && chromeInteractive
-            )
-
             LiveScopeOverlays(
                 layout: layout,
                 interfaceLocked: interfaceLocked,
@@ -543,52 +495,6 @@ struct LiveViewScreen: View {
                     .zIndex(2)
             }
 
-            if showsGimbalButton {
-                LiveGimbalButton()
-                    .liveModuleFrame(Self.cgRect(self.gimbalCluster(layout).controls))
-                    .opacity(captureControlsPresented ? 0 : 1)
-                    .allowsHitTesting(!interfaceLocked && !captureControlsPresented)
-                    .accessibilityHidden(
-                        captureControlsPresented || !liveChromeVisible || zoomDialMounted
-                    )
-                    .zIndex(2)
-            }
-
-            if OsmoMonitorPresentation.capabilities(model.session).gimbal
-                && model.chromeSectionMounts(.gimbalStick)
-            {
-                LiveGimbalStick(
-                    enabled: !interfaceLocked && model.liveOperatorPanel == nil
-                        && chromeInteractive && !captureControlsPresented
-                )
-                .id("live-gimbal-stick")
-                .transaction { $0.animation = nil }
-                .chromeEditable(.gimbalStick, editing: editingMode)
-                .liveModuleFrame(Self.cgRect(self.gimbalCluster(layout).stick))
-                .opacity(captureControlsPresented ? 0 : 1)
-                .accessibilityHidden(
-                    captureControlsPresented || !liveChromeVisible || zoomDialMounted
-                )
-                .zIndex(3)
-            }
-
-            if model.headTrackingEnabled,
-                OsmoMonitorPresentation.capabilities(model.session).headTracking,
-                !interfaceLocked, chromeInteractive,
-                model.liveOperatorPanel == nil
-            {
-                LiveHeadTrackCalibrateButton(
-                    title: model.headTrackControlTitle, onTap: { headphones.tapControl() }
-                )
-                .liveModuleFrame(layout.gimbalCalibrate)
-                .opacity(captureControlsPresented ? 0 : 1)
-                .allowsHitTesting(!captureControlsPresented && !zoomDialMounted)
-                .accessibilityHidden(
-                    captureControlsPresented || !liveChromeVisible || zoomDialMounted
-                )
-                .zIndex(3)
-            }
-
             if !interfaceLocked, model.session.isFocusResetAvailable, chromeInteractive {
                 LiveFocusResetButton()
                     .liveModuleFrame(layout.focusReset)
@@ -686,13 +592,6 @@ struct LiveViewScreen: View {
             )
         }
 
-        if chromeInteractive, showsGimbalButton, model.liveGimbalPanel == .sheet, !interfaceLocked {
-            LiveGimbalSheetHost(
-                layout: layout,
-                cluster: gimbalCluster(layout)
-            )
-        }
-
         if chromeInteractive, !interfaceLocked {
             LiveCapturePickerHost(
                 sheet: Bindable(model).captureSheet,
@@ -782,7 +681,7 @@ struct LiveViewScreen: View {
 
     /// Presentation arbitration only. The existing model fields remain the
     /// adapter boundary for camera- and playback-owned native controls.
-    private enum OverlayOwner { case top, capture, drum, assist, gimbal, zoom }
+    private enum OverlayOwner { case top, capture, drum, assist, zoom }
 
     private func selectOverlay(_ owner: OverlayOwner) {
         guard !interfaceLocked else {
@@ -790,7 +689,6 @@ struct LiveViewScreen: View {
             model.captureSheet = nil
             model.captureDrum = nil
             model.assist.configureTool = nil
-            model.liveGimbalPanel = .none
             closeZoomDial()
             return
         }
@@ -798,7 +696,6 @@ struct LiveViewScreen: View {
         if owner != .capture { model.captureSheet = nil }
         if owner != .drum { model.captureDrum = nil }
         if owner != .assist { model.assist.configureTool = nil }
-        if owner != .gimbal { model.liveGimbalPanel = .none }
         if owner != .zoom { closeZoomDial() }
     }
 
@@ -1074,25 +971,7 @@ private struct LiveSessionBanners: View {
                         model.session.controlNote = nil
                     }
             }
-            if model.headTrackingEnabled, let pose = model.headTrackAxisPose {
-                VStack(alignment: .leading, spacing: 6) {
-                    LiveHeadTrackAxisDials(pose: pose)
-                    if !model.headTrackImuReadout.isEmpty {
-                        Text(model.headTrackImuReadout)
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(LiveDesign.text)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: 220, alignment: .leading)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
-                            .liveChromeCapsule()
-                    }
-                }
-                .position(x: feed.minX + 118, y: feed.minY + 118)
-                .zIndex(5)
-                .allowsHitTesting(false)
-                .transaction { $0.animation = nil }
-            }
+
         }
         .animation(.easeOut(duration: 0.18), value: model.session.controlNote)
         .animation(.easeOut(duration: 0.18), value: toastY)

@@ -3,18 +3,6 @@ import Testing
 @testable import OpenPocketViewCore
 
 @Suite struct ShootingModeTests {
-    @Test func livePhotoStatusUsesStillControlsAndShutter() {
-        var status = CameraStatus()
-        status.applyShootingMode(0x4D)
-        #expect(status.isPhoto)
-        #expect(status.shootingModeLabel == "Live Photo")
-        #expect(ShootingMode.fromStatus(0x4D) == .livePhoto)
-        #expect(!ShootingMode.livePhoto.offersVideoFormat)
-        let command = CaptureCommand.frame(mode: .livePhoto, model: nil, isRecording: false)
-        #expect(command.cmdId == 0x01)
-        #expect(command.payload == [0x01])
-    }
-
     @Test func observed200FpsRoundTripsThroughCapabilitySelection() {
         let bytes: [UInt8] = [0x01, 0x04, 0x00, 0x01, 0x10, 0x13, 0x00]
         let formats = CamCapVideoFormat.parse(bytes)
@@ -51,7 +39,7 @@ import Testing
     @Test func reportedPhoto05NormalizesToPhoto() {
         #expect(ShootingMode.fromWire(0x05) == .photo)
         #expect(ShootingMode.fromStatus(0x05) == .photo)
-        #expect(ShootingMode.fromStatus(0x17) == .photo)
+        #expect(ShootingMode.fromStatus(0x17) == nil)
         #expect(ShootingMode.fromStatus(0x28) == .superNight)
         #expect(ShootingMode.fromStatus(-1) == nil)
         var status = CameraStatus()
@@ -61,62 +49,6 @@ import Testing
         status.shootingMode = 0x28
         #expect(!status.isPhoto)
         #expect(status.shootingModeLabel == "SuperNight")
-    }
-
-    @Test func photoSetByteIsBodySpecificAndDefaultStaysPocket4() {
-        #expect(Commands.setShootingMode(.photo).payload == [0x17])
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: "Osmo Pocket 3")
-        let nano = CameraModel.resolve(modelId: 0x0019, name: "Osmo Nano")
-        let pocket4 = CameraModel.resolve(modelId: 0x0021, name: "Osmo Pocket 4")
-        let pro = CameraModel.resolve(modelId: 0x0022, name: "Osmo Pocket 4 Pro")
-        #expect(Commands.setShootingMode(.photo, model: pocket3).payload == [0x05])
-        #expect(Commands.setShootingMode(.photo, model: nano).payload == [0x05])
-        #expect(Commands.setShootingMode(.photo, model: pocket4).payload == [0x17])
-        #expect(Commands.setShootingMode(.photo, model: pro).payload == [0x17])
-        #expect(Commands.setShootingMode(.video, model: pocket3).payload == [0x01])
-        #expect(ShootingMode.photo.wireByte(for: nil) == 0x17)
-    }
-
-    @Test func captureCommandRoutesPhotoVideoAndPocket3Timelapse() {
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: "Osmo Pocket 3")
-        let pro = CameraModel.resolve(modelId: 0x0022, name: "Osmo Pocket 4 Pro")
-        #expect(
-            CaptureCommand.frame(mode: .photo, model: pocket3, isRecording: false).cmdId == 0x01)
-        #expect(
-            CaptureCommand.frame(mode: .photo, model: pocket3, isRecording: false).payload == [0x01]
-        )
-        #expect(
-            CaptureCommand.frame(mode: .video, model: pocket3, isRecording: false).cmdId == 0x02)
-        #expect(
-            CaptureCommand.frame(mode: .video, model: pocket3, isRecording: false).payload == [0x01]
-        )
-        #expect(
-            CaptureCommand.frame(mode: .video, model: pocket3, isRecording: true).payload == [0x00])
-        #expect(
-            CaptureCommand.frame(mode: .superNight, model: pocket3, isRecording: false).cmdId
-                == 0x02)
-        let p3lapseStart = CaptureCommand.frame(
-            mode: .timeLapse, model: pocket3, isRecording: false)
-        #expect(p3lapseStart.cmdId == 0x01)
-        #expect(p3lapseStart.payload == [0x01])
-        #expect(
-            CaptureCommand.frame(mode: .timeLapse, model: pocket3, isRecording: true).payload == [
-                0x00
-            ])
-        let proLapse = CaptureCommand.frame(mode: .timeLapse, model: pro, isRecording: false)
-        #expect(proLapse.cmdId == 0x02)
-        #expect(proLapse.payload == [0x01])
-        #expect(Commands.shutterTrigger(start: false).payload == [0x00])
-    }
-
-    @Test func surveyedBodiesPassSlowMoTrailerContext() {
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: "Osmo Pocket 3")
-        let pro = CameraModel.resolve(modelId: 0x0022, name: "Osmo Pocket 4 Pro")
-        #expect(VideoFormat.formatSetMode(model: pocket3, statusMode: .slowMo) == .slowMo)
-        #expect(VideoFormat.formatSetMode(model: pro, statusMode: .slowMo) == .slowMo)
-        #expect(VideoFormat.formatSetMode(model: nil, statusMode: .slowMo) == nil)
-        let pocket4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        #expect(VideoFormat.formatSetMode(model: pocket4, statusMode: .slowMo) == nil)
     }
 
     @Test func modeTransitionClearsStaleCapabilitiesWithoutTouchingLiveFormat() {

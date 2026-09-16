@@ -115,7 +115,6 @@ final class DiagnosticCenter: NSObject, MXMetricManagerSubscriber {
         let family = session.connectedCamera?.model.family
         let familyName: String
         switch family {
-        case .pocket: familyName = "pocket"
         case .nano: familyName = "nano"
         case .other: familyName = "other"
         case nil: familyName = "none"

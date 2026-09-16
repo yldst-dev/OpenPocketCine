@@ -19,7 +19,7 @@ import XCTest
 
     func testMissingRoleQueryIsRestrictedToPhysicallyVerifiedModelsAndReply() {
         for (name, accepted) in [
-            ("OsmoPocket3-Test", true), ("OsmoNano-Test", true),
+            ("OsmoPocket3-Test", false), ("OsmoNano-Test", true),
             ("OsmoPocket4P-Test", false), ("OsmoAction4-Test", false),
         ] {
             let camera = FoundCamera(
@@ -31,31 +31,6 @@ import XCTest
             }
         }
     }
-    func testPocketTileCompensatesSelfiePoseOnlyWithCameraFlipOff() {
-        let tile = MultiviewSession.Tile()
-        tile.camera = FoundCamera(
-            id: UUID(), name: "Test Pocket",
-            model: .resolve(modelId: 0x22, name: "OsmoPocket4P-Test"), modelId: 0x22)
-        let yaw = UInt16(bitPattern: Int16(-1800))
-        var payload = [UInt8](repeating: 0, count: 12)
-        payload[4] = UInt8(truncatingIfNeeded: yaw)
-        payload[5] = UInt8(truncatingIfNeeded: yaw >> 8)
-        tile.updateSettings(
-            .init(sender: 0, receiver: 0, seq: 1, flags: 0, cmdSet: 4, cmdId: 5, payload: payload))
-        XCTAssertTrue(tile.decoder.poseViewFlip)
-        tile.updateSettings(
-            .init(
-                sender: 0, receiver: 0, seq: 2, flags: 0xC0, cmdSet: 2, cmdId: 0x8E,
-                payload: [0, 0, 1, 0x38, 0, 1, 1]))
-        XCTAssertFalse(tile.decoder.poseViewFlip)
-        tile.updateSettings(
-            .init(
-                sender: 0, receiver: 0, seq: 3, flags: 0xC0, cmdSet: 2, cmdId: 0x8E,
-                payload: [0, 0, 1, 0x38, 0, 1, 0]))
-        XCTAssertTrue(tile.decoder.poseViewFlip)
-        XCTAssertFalse(MultiviewSession.Tile().decoder.poseViewFlip)
-    }
-
     func testMultiviewDiscoversOsmoCatalogWithoutGuessingUnknownPreviewCommands() {
         for (id, name) in [
             (0x10, "Osmo Action 2"), (0x12, "Osmo Action 3"), (0x14, "Osmo Action 4"),
@@ -65,13 +40,13 @@ import XCTest
         ] {
             let camera = FoundCamera(
                 id: UUID(), name: name, model: .resolve(modelId: id, name: name), modelId: id)
-            XCTAssertTrue(camera.appearsInMultiview, name)
-            XCTAssertEqual(camera.hasMultiviewPreview, [0x19, 0x20, 0x21, 0x22].contains(id), name)
+            XCTAssertEqual(camera.appearsInMultiview, id == 0x19, name)
+            XCTAssertEqual(camera.hasMultiviewPreview, id == 0x19, name)
         }
         let pocket = FoundCamera(
             id: UUID(), name: "OsmoPocket3-Test",
             model: .resolve(modelId: nil, name: "OsmoPocket3-Test"), modelId: nil)
-        XCTAssertTrue(pocket.hasMultiviewPreview)
+        XCTAssertFalse(pocket.hasMultiviewPreview)
         let drone = FoundCamera(
             id: UUID(), name: "DJI Neo", model: .resolve(modelId: 0x7E, name: "DJI Neo"),
             modelId: 0x7E)
@@ -79,7 +54,7 @@ import XCTest
         let oldPocket = FoundCamera(
             id: UUID(), name: "Osmo Pocket 2", model: .resolve(modelId: nil, name: "Osmo Pocket 2"),
             modelId: nil)
-        XCTAssertTrue(oldPocket.appearsInMultiview)
+        XCTAssertFalse(oldPocket.appearsInMultiview)
         XCTAssertFalse(oldPocket.hasMultiviewPreview)
     }
     func testStageUsesSharedPresentationAndKeepsOneSlotPerCamera() {
@@ -195,48 +170,6 @@ import XCTest
         XCTAssertFalse(driver.isClosed)
         driver.close()
     }
-    func testLeavingBorrowedLiveViewCancelsProgrammedMove() async throws {
-        let decoder = HevcDecoder()
-        decoder.effects.histogram = true
-        decoder.unlockHardwareDecoder()
-        let borrowed = CameraSession(borrowing: decoder)
-        let driver = DatalinkDriver(
-            port: 9004, tcpPoke: false, pairingToken: "test", stationHost: "192.168.1.10")
-        defer {
-            borrowed.releaseMultiview()
-            driver.close()
-            decoder.reset()
-        }
-        decoder.handleDecodedFrame(ScopeTestBuffers.makeEdgeBuffer())
-        let deadline = Date().addingTimeInterval(2)
-        while Date() < deadline, decoder.lastPresentedAt == nil {
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        XCTAssertNotNil(decoder.lastPresentedAt)
-        let camera = FoundCamera(
-            id: UUID(), name: "OsmoPocket4P-Test",
-            model: .resolve(modelId: 0x22, name: "OsmoPocket4P-Test"), modelId: 0x22)
-        borrowed.updateMultiview(camera: camera, driver: driver, status: CameraStatus())
-        borrowed.receiveMultiview(
-            .init(
-                sender: 0, receiver: 0, seq: 1, flags: 0, cmdSet: 4, cmdId: 5,
-                payload: [UInt8](repeating: 0, count: 22)))
-        let start = try XCTUnwrap(borrowed.freshGimbalWaypoint)
-        var end = start
-        end.yawDeg += 10
-        borrowed.gimbalProgram = GimbalProgram(a: start, b: end)
-        borrowed.runProgrammedMove()
-        XCTAssertTrue(borrowed.gimbalMoveRunning, borrowed.controlNote ?? "Move did not start")
-        XCTAssertEqual(borrowed.gimbalStartCountdown, 3)
-
-        borrowed.releaseMultiview()
-
-        XCTAssertFalse(borrowed.gimbalMoveRunning)
-        XCTAssertNil(borrowed.gimbalStartCountdown)
-        XCTAssertNil(borrowed.datalink)
-        XCTAssertFalse(driver.isClosed, "The tile still owns its transport")
-    }
-
     func testBorrowedLiveViewCannotStartSharingOrChangeItsPreference() {
         let model = AppModel()
         model.session = CameraSession(borrowing: HevcDecoder())

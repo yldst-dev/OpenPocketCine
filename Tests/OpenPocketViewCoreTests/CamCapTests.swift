@@ -51,63 +51,13 @@ import Testing
                 model: CameraModel.resolve(modelId: 0x22, name: nil), shootingMode: 0))
         let pocket3 = CameraModel.resolve(modelId: 0x20, name: "OsmoPocket3-Test")
         #expect(
-            CamCapVideoFormat.allowsOperatorSet(
+            !CamCapVideoFormat.allowsOperatorSet(
                 VideoFormat(resolution: .p4K, frameRate: .fps120),
                 available: [], model: pocket3, shootingMode: 0))
         #expect(
             !CamCapVideoFormat.allowsOperatorSet(
                 VideoFormat(resolution: .p4K, frameRate: .fps240),
                 available: [], model: pocket3, shootingMode: 0))
-    }
-
-    @Test func pocket3PickerIncludesDocumentedFormatsWithoutCapabilities() {
-        let model = CameraModel.resolve(modelId: 0x20, name: "OsmoPocket3-Test")
-        let formats = CamCapVideoFormat.pickerFormats(available: [], model: model, shootingMode: 1)
-        #expect(CamCapVideoFormat.resolutions(available: formats, aspect: .sixteenNine, current: .p4K).contains(.p2_7K))
-        #expect(CamCapVideoFormat.resolutions(available: formats, aspect: .nineSixteen, current: nil).contains(.p3K_9x16))
-        #expect(CamCapVideoFormat.resolutions(available: formats, aspect: .oneOne, current: nil).contains(.p3K_1x1))
-        #expect(!CamCapVideoFormat.aspects(available: formats, current: nil).contains(.fourThree))
-    }
-
-    @Test func pocket3PickerNeverOverridesReportedFormatsOrOtherModes() {
-        let pocket3 = CameraModel.resolve(modelId: 0x20, name: "OsmoPocket3-Test")
-        let reported = [VideoFormat(resolution: .p4K, frameRate: .fps25)]
-        #expect(CamCapVideoFormat.pickerFormats(available: reported, model: pocket3, shootingMode: 1) == reported)
-        for mode in [-1, 2, 0x05, 0x0A, 0x17, 26] {
-            #expect(CamCapVideoFormat.pickerFormats(available: [], model: pocket3, shootingMode: mode).isEmpty)
-        }
-        for name in ["OsmoPocket4P-Test", "OsmoNano-Test", "Unknown"] {
-            #expect(CamCapVideoFormat.pickerFormats(available: [], model: .resolve(modelId: nil, name: name), shootingMode: 1).isEmpty)
-        }
-        #expect(
-            CamCapVideoFormat.pickerFormats(available: [], model: pocket3, shootingMode: 0)
-                .isEmpty == false)
-        #expect(
-            CamCapVideoFormat.pickerFormats(
-                available: [], model: .resolve(modelId: 0x22, name: "Osmo Pocket 4 Pro"),
-                shootingMode: 0
-            ).isEmpty)
-    }
-
-    @Test func pocket3SlowMoAndLowLightFallbacksMatchAcceptedPairsOnly() {
-        let pocket3 = CameraModel.resolve(modelId: 0x20, name: "OsmoPocket3-Test")
-        let slow = CamCapVideoFormat.pickerFormats(available: [], model: pocket3, shootingMode: 0)
-        #expect(
-            slow == [
-                VideoFormat(resolution: .p4K, frameRate: .fps100),
-                VideoFormat(resolution: .p4K, frameRate: .fps120),
-                VideoFormat(resolution: .p2_7K, frameRate: .fps120),
-                VideoFormat(resolution: .p1080, frameRate: .fps120),
-                VideoFormat(resolution: .p1080, frameRate: .fps240),
-            ])
-        let lowLight = CamCapVideoFormat.pickerFormats(
-            available: [], model: pocket3, shootingMode: 0x28)
-        #expect(lowLight.count == 6)
-        #expect(Set(lowLight.map(\.resolution)) == [.p1080, .p4K])
-        #expect(Set(lowLight.map(\.frameRate)) == [.fps24, .fps25, .fps30])
-        #expect(
-            !lowLight.contains { $0.resolution == .p2_7K },
-            "Low-Light survey had no 2.7K")
     }
 
     @Test func twentyFivePListDiffersFromSixtyP() {
@@ -308,33 +258,6 @@ import Testing
 
     /// #180: Auto ISO range labels use the body's Rec.709 floor. SET bytes stay
     /// `IsoLimit` — Pocket 3 "100–400" was 50–400 on the camera.
-    @Test func rec709IsoAutoFloorFollowsTheBody() {
-        let p3 = CameraModel.resolve(modelId: 0x0020, name: nil)
-        let p4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        let p4p = CameraModel.resolve(modelId: 0x0022, name: nil)
-        #expect(p3.isoAutoRangeFloor == 50)
-        #expect(p4.isoAutoRangeFloor == 50)
-        #expect(p4p.isoAutoRangeFloor == 100)
-        #expect(CameraModel.default.isoAutoRangeFloor == 100)
-        #expect(
-            CameraModel.resolve(modelId: nil, name: "OsmoPocket3-A1B2").isoAutoRangeFloor == 50)
-
-        #expect(ColorMode.normal.isoAutoBase(for: p3) == 50)
-        #expect(ColorMode.hdr.isoAutoBase(for: p3) == 50)
-        #expect(ColorMode.dLogM.isoAutoBase(for: p3) == 50)
-        #expect(ColorMode.normal.isoAutoBase(for: p4) == 50)
-        #expect(ColorMode.normal.isoAutoBase(for: p4p) == 100)
-        #expect(ColorMode.normal.isoAutoBase == 100, "unknown body keeps captured 4 Pro floor")
-        #expect(ColorMode.dLog.isoAutoBase(for: p3) == 400, "D-Log floor is color, not body")
-        #expect(ColorMode.dLog2.isoAutoBase(for: p3) == nil)
-
-        #expect(ColorMode.normal.isoAutoLabels(for: p3).first == "50–200")
-        #expect(ColorMode.normal.isoAutoLabels(for: p3).contains("50–400"))
-        #expect(!ColorMode.normal.isoAutoLabels(for: p3).contains("100–400"))
-        #expect(ColorMode.normal.isoAutoLabels(for: p4p).first == "100–200")
-        #expect(IsoLimit.max400.label(base: 50) == "50–400")
-    }
-
     @Test func subscriptionIncludesShutterCap() {
         #expect(Commands.subscriptionKeys.contains(CamCapShutter.subscribeKey))
         #expect(Commands.subscriptionKeys.contains(CamCapIso.subscribeKey))
@@ -478,131 +401,8 @@ import Testing
         #expect(VideoFormat(resolution: .p4K_1x1, frameRate: .fps24).chipLabel == "4K 1:1 · 24p")
     }
 
-    @Test func colorModesFollowTheBody() {
-        let pro = CameraModel.resolve(modelId: 0x0022, name: nil)
-        let pocket4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: nil)
-        let nano = CameraModel.resolve(modelId: 0x0019, name: nil)
-        #expect(ColorMode.available(for: pro) == [.normal, .hdr, .dLog, .dLog2])
-        #expect(ColorMode.available(for: pocket4) == [.normal, .hdr, .dLog])
-        #expect(ColorMode.available(for: pocket3) == [.normal, .hdr, .dLogM])
-        #expect(ColorMode.available(for: nano) == [.normal, .normal10, .dLogM])
-        #expect(ColorMode.dLogM.label(for: .pocket) == "D-Log M")
-        #expect(ColorMode(label: "D-Log M") == .dLogM)
-        #expect(!ColorMode.available(for: pocket3).contains(.dLog2))
-        #expect(!ColorMode.available(for: pocket3).contains(.dLog))
-        #expect(!ColorMode.available(for: pocket4).contains(.dLog2))
-        #expect(
-            ColorMode.available(for: CameraModel.resolve(modelId: nil, name: "OsmoPocket4P-ABCD"))
-                .contains(.dLog2))
-        #expect(
-            !ColorMode.available(for: CameraModel.resolve(modelId: nil, name: "OsmoPocket4-ABCD"))
-                .contains(.dLog2))
-        #expect(
-            ColorMode.available(for: CameraModel.resolve(modelId: nil, name: "OsmoPocket3-ABCD"))
-                == [.normal, .hdr, .dLogM])
-        #expect(
-            !CamCapColorMode.wheel(
-                available: [.normal, .hdr, .dLog, .dLog2], model: pocket3
-            ).contains(.dLog2))
-        #expect(
-            !CamCapColorMode.wheel(
-                available: [.normal, .hdr, .dLog, .dLog2], model: pocket4
-            ).contains(.dLog2))
-        #expect(
-            CamCapColorMode.wheel(
-                available: [.normal, .hdr, .dLog, .dLog2], model: pro
-            ) == [.normal, .hdr, .dLog, .dLog2])
-    }
-
     /// #176: Pocket 3 Rec.709 is `00`, D-Log M is `3D`. `3F` is Pocket 4 Normal
     /// and is rejected; sending `00` as D-Log M switched the body to Normal.
-    @Test func pocket3ColorWireSwapsNormalAndDLogM() {
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: nil)
-        let muse = CameraModel.resolve(modelId: nil, name: "Xtra Muse")
-        let pocket4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        let nano = CameraModel.resolve(modelId: 0x0019, name: nil)
-
-        #expect(ColorMode.normal.wireByte(for: pocket3) == 0x00)
-        #expect(ColorMode.dLogM.wireByte(for: pocket3) == 0x3D)
-        #expect(ColorMode.hdr.wireByte(for: pocket3) == 0x3C)
-        #expect(ColorMode.normal.wireByte(for: muse) == 0x00)
-        #expect(ColorMode.dLogM.wireByte(for: muse) == 0x3D)
-
-        #expect(ColorMode.fromWire(0x00, model: pocket3) == .normal)
-        #expect(ColorMode.fromWire(0x3D, model: pocket3) == .dLogM)
-        #expect(ColorMode.fromWire(0x3C, model: pocket3) == .hdr)
-        #expect(ColorMode.parseImageEffect([0, 0, 0x00], model: pocket3) == .normal)
-        #expect(ColorMode.parseImageEffect([0, 0, 0x3D], model: pocket3) == .dLogM)
-
-        #expect(Commands.setColorMode(.normal, model: pocket3).payload == [0x00])
-        #expect(Commands.setColorMode(.dLogM, model: pocket3).payload == [0x3D])
-        #expect(Commands.setColorMode(.hdr, model: pocket3).payload == [0x3C])
-
-        #expect(ColorMode.normal.wireByte(for: pocket4) == 0x3F)
-        #expect(ColorMode.normal.wireByte(for: nano) == 0x00)
-        #expect(ColorMode.normal10.wireByte(for: nano) == 0x3F)
-        #expect(ColorMode.dLogM.wireByte(for: nano) == 0x3D)
-        #expect(ColorMode.fromWire(0x00, model: nano) == .normal)
-        #expect(ColorMode.fromWire(0x3F, model: nano) == .normal10)
-        #expect(ColorMode.fromWire(0x3D, model: nano) == .dLogM)
-        #expect(Commands.setColorMode(.normal, model: pocket4).payload == [0x3F])
-        #expect(Commands.setColorMode(.normal, model: nano).payload == [0x00])
-        #expect(Commands.setColorMode(.normal10, model: nano).payload == [0x3F])
-        #expect(Commands.setColorMode(.dLogM, model: nano).payload == [0x3D])
-        #expect(Commands.setColorMode(.dLogM).payload == [0x00])
-
-        let cap: [UInt8] = [0x01, 0x04, 0x00, 0x03, 0x00, 0x3C, 0x3D]
-        #expect(CamCapColorMode.parse(cap, model: pocket3) == [.normal, .hdr, .dLogM])
-        #expect(
-            CamCapColorMode.wheel(available: [.normal, .hdr, .dLogM], model: pocket3)
-                == [.normal, .hdr, .dLogM])
-
-        var s = CameraStatus()
-        var effect = [UInt8](repeating: 0, count: 16)
-        effect[2] = 0x00
-        #expect(
-            CameraStatusDecoder.applySubscribePush(
-                SubscribePush.pack(name: "cam_image_effect", value: effect),
-                to: &s, model: pocket3))
-        #expect(s.colorMode == .normal)
-        effect[2] = 0x3D
-        #expect(
-            CameraStatusDecoder.applySubscribePush(
-                SubscribePush.pack(name: "cam_image_effect", value: effect),
-                to: &s, model: pocket3))
-        #expect(s.colorMode == .dLogM)
-    }
-
-    @Test func zoomStopsFollowTheBody() {
-        let pro = CameraModel.resolve(modelId: 0x0022, name: nil)
-        let pocket4 = CameraModel.resolve(modelId: 0x0021, name: nil)
-        let pocket3 = CameraModel.resolve(modelId: 0x0020, name: nil)
-        let nano = CameraModel.resolve(modelId: 0x0019, name: nil)
-        #expect(pro.zoomStops == [1, 3, 6, 12])
-        #expect(pocket4.zoomStops == [1, 2, 4])
-        #expect(pocket3.zoomStops == [1, 2, 4])
-        #expect(nano.zoomStops == [1])
-        #expect(pocket3.activeZoomStops(resolution: .p4K, shootingMode: 0x01) == [1, 2])
-        #expect(pocket3.activeZoomStops(resolution: .p1080, shootingMode: 0x01) == [1, 2, 4])
-        #expect(pocket4.activeZoomStops(resolution: .p4K, shootingMode: 0x01) == [1, 2, 4])
-        #expect(pro.activeZoomStops(resolution: .p4K, shootingMode: 0x00) == [1, 3])
-        #expect(pocket4.activeZoomStops(resolution: .p4K, shootingMode: 0x00) == [1])
-        #expect(CamFov.nextJump(from: 1, stops: [1, 2, 4]) == 2)
-        #expect(CamFov.nextJump(from: 2, stops: [1, 2, 4]) == 4)
-        #expect(CamFov.nextJump(from: 4, stops: [1, 2, 4]) == 1)
-        #expect(CamFov.previousJump(from: 1, stops: [1, 2, 4]) == 1)
-        #expect(CamFov.previousJump(from: 2, stops: [1, 2, 4]) == 1)
-        #expect(CamFov.previousJump(from: 4, stops: [1, 2, 4]) == 2)
-        #expect(CamFov.previousJump(from: 3) == 1)
-        #expect(CamFov.previousJump(from: 12) == 6)
-        #expect(CamFov.chipWrite(forJump: 2) == .lens(CamFov.lensPosition(for: 2)))
-        #expect(CamFov.chipWrite(forJump: 4) == .lens(CamFov.lensPosition(for: 4)))
-        #expect(CamFov.clamp(12, max: 4) == 4)
-        #expect(CamFov.isJumpStop(2, stops: [1, 2, 4]))
-        #expect(!CamFov.isJumpStop(2))
-    }
-
     private static let shutter25p = hex(
         "016d000002000101001e00052180be00409f00009900889300a08f00808c00c48900d08700408600e28400e88300208300808200f48100908100408100f08000c88000a080007880006480005080003c80003280002880001e80001980000c80000a8000088000068000058000048000"
     )

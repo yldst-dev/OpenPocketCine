@@ -21,19 +21,10 @@ enum OsmoMonitorPresentation {
     }
 
     static func capabilities(_ session: CameraSession) -> MonitorCapabilities {
-        #if targetEnvironment(simulator)
-            if MonitorUIReview.isActive {
-                let gimbal = ProcessInfo.processInfo.environment["OPV_UI_REVIEW_BODY"] != "nano"
-                return MonitorCapabilities(
-                    gimbal: gimbal, zoom: true, focus: true, audio: true,
-                    headTracking: gimbal, clipDelete: true, clipStar: true,
-                    requiresInternetHop: true, timecode: true)
-            }
-        #endif
         return MonitorCapabilities(
-            gimbal: session.hasGimbal, zoom: !session.zoomStops.isEmpty,
-            focus: session.supportsFocusMode, audio: true,
-            headTracking: session.hasGimbal, clipDelete: true, clipStar: true,
+            gimbal: false, zoom: false,
+            focus: false, audio: true,
+            headTracking: false, clipDelete: true, clipStar: true,
             requiresInternetHop: true, timecode: true)
     }
 }

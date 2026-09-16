@@ -72,7 +72,7 @@ private let PPS = hex("4401c17312240890")
     @Test func liveViewEnableFrame() throws {
         let bytes = Duml.encode(Commands.liveViewEnable(seq: 0xE06E))
         let (f, _) = try #require(Duml.decode(bytes))
-        #expect(f.receiver == 0x08 && f.cmdSet == 0x09 && f.cmdId == 0xA8)
+        #expect(f.receiver == 0x41 && f.cmdSet == 0x09 && f.cmdId == 0xA8)
         #expect(f.payload == [0x00, 0x04, 0x02, 0, 0, 0, 0, 0, 0, 0])
     }
 
@@ -100,7 +100,7 @@ private let PPS = hex("4401c17312240890")
         let nano = CameraModel.resolve(modelId: 0x19, name: nil)
         #expect(nano.liveViewEnableReceiver == 0x41)
         #expect(nano.usesNanoLiveViewGate)
-        #expect(CameraModel.resolve(modelId: 0x22, name: nil).liveViewEnableReceiver == 0x08)
+        #expect(CameraModel.default.liveViewEnableReceiver == 0x41)
         #expect(!CameraModel.resolve(modelId: 0x22, name: nil).usesNanoLiveViewGate)
     }
 }

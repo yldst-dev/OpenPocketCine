@@ -76,22 +76,6 @@ final class AppModel {
     var assistToolUsage: MonitorToolUsage = OperatorPrefs.assistToolUsage {
         didSet { OperatorPrefs.assistToolUsage = assistToolUsage }
     }
-    var headTrackingEnabled: Bool = OperatorPrefs.headTrackingEnabled {
-        didSet { OperatorPrefs.headTrackingEnabled = headTrackingEnabled }
-    }
-    /// A manual mode selection takes control back from the AirPods stream.
-    func setGimbalMode(_ mode: GimbalMode) {
-        guard session.canSetGimbalConfiguration else { return }
-        headTrackingEnabled = false
-        session.setGimbalMode(mode)
-    }
-
-    /// Live SET / STOP chip. SET starts tracking and locks forward; STOP ends it.
-    var headTrackControlTitle = LiveHeadTrackCalibrateButton.calibrateTitle
-    /// Raw AirPods attitude / gyro / SET-relative look. Empty when Head Tracking is off.
-    var headTrackImuReadout = ""
-    /// SET-relative (or first-sample) yaw/pitch for the live axis rings. `nil` without IMU.
-    var headTrackAxisPose: HeadTrackAxisPose?
     /// On-screen gimbal stick is thrown. Head tracking yields.
     var gimbalScreenHeld = false
     /// Gamepad left stick is thrown. Head tracking yields.
@@ -99,7 +83,6 @@ final class AppModel {
     var gimbalAnalogHeld: Bool { gimbalScreenHeld || gimbalPadHeld }
     /// Extended gamepad is bound. Toast on rising/falling edge.
     var gamepadConnected = false
-    var liveGimbalPanel: LiveGimbalPanel = .none
     /// Canvas-space centre of the programmed-move editor / Run pill. Nil until the operator drags it.
     var gimbalFloatCenter: CGPoint?
     /// Canvas-space centre of the programmed-move debug plate.
@@ -292,7 +275,6 @@ final class AppModel {
     /// Leaves Settings and switches the monitor to `mode` so badges land on the real thing.
     func beginChromeEditing(_ mode: PocketDispMode) {
         liveOperatorPanel = nil
-        liveGimbalPanel = .none
         setDisplayMode(clean: mode == .clean)
         chromeEditorMode = mode
     }

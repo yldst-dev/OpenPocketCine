@@ -3,6 +3,11 @@ title: Android app
 description: Jetpack Compose phone shell on a cross-compiled Swift core. Google Play public beta. arm64-v8a only.
 ---
 
+This branch supports [Osmo Nano only](../guides/nano/). Older descriptions
+of Pocket controls and qualification below are historical and do not apply to
+the Nano profile. Gimbal, head tracking, autofocus, camera zoom and Pocket LUTs
+are excluded. Physical verification of this branch is pending.
+
 The Android app lives in `Apps/Android/`. It is an early phone shell: pairing,
 HEVC/AVC live view, GPU looks, scopes, camera writes, and media. The public beta on
 Google Play is open — [join the Android beta](https://play.google.com/store/apps/details?id=com.opencapture.openpocketcine&hl=en-US&ah=mXzHtdYCMQTB83vt0jIRLnOOZaA). iOS is the daily driver. arm64

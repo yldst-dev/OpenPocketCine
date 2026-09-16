@@ -29,17 +29,9 @@ public enum ShootingMode: UInt8, CaseIterable, Sendable {
     case slowMo = 0x00
     case video = 0x01
     case timeLapse = 0x02
-    case photo = 0x17  // Pocket 4 / 4 Pro SET. Pocket 3 / Nano Photo is `photoRawPocket3AndNano`.
+    case photo = 0x05
     case hyperLapse = 0x0A
-    /// Pocket 4 Pro Live Photo, physically observed in Mimo.
-    case livePhoto = 0x4D
-    /// Pocket 3 Mimo Low-Light **video**. Not a stills mode — `isPhoto` is false.
     case superNight = 0x28
-
-    /// Pocket 3 / Nano Photo `0x02/0xE1` byte. Pocket 3 survey + Nano capture.
-    public static let photoRawPocket3AndNano: UInt8 = 0x05
-    /// Pocket 4 / 4 Pro Photo `0x02/0xE1` byte (`mimo-settings-1`).
-    public static let photoRawPocket4: UInt8 = 0x17
 
     public var label: String {
         switch self {
@@ -47,28 +39,23 @@ public enum ShootingMode: UInt8, CaseIterable, Sendable {
         case .video: "Video"
         case .timeLapse: "TimeLapse"
         case .photo: "Photo"
-        case .livePhoto: "Live Photo"
         case .hyperLapse: "HyperLapse"
         case .superNight: "SuperNight"
         }
     }
 
     public func label(for model: CameraModel?) -> String {
-        self == .superNight && model?.isPocket3 == true ? "Low-Light" : label
+        label
     }
 
     /// Stills only. SuperNight / Low-Light is video (`0x28`).
-    public var isPhoto: Bool { self == .photo || self == .livePhoto }
+    public var isPhoto: Bool { self == .photo }
 
     /// Video FORMAT / fps apply. Photo has no `0x02/0x18` pair.
     public var offersVideoFormat: Bool { !isPhoto }
 
-    /// Pocket 3 TimeLapse start/stop is `0x02/0x01`, not Video `0x02/0x02`.
-    public var usesShutterTriggerOnPocket3: Bool { self == .timeLapse }
-
     /// Map a reported `0x02/0x80` / SET byte onto the tabled case. `0x05` is Photo.
     public static func fromWire(_ raw: UInt8) -> ShootingMode? {
-        if raw == photoRawPocket3AndNano { return .photo }
         return ShootingMode(rawValue: raw)
     }
 
@@ -79,38 +66,23 @@ public enum ShootingMode: UInt8, CaseIterable, Sendable {
 
     /// Photo SET byte for this body. Unknown bodies keep the historic `0x17` default.
     public static func photoWireByte(for model: CameraModel?) -> UInt8 {
-        guard let model else { return photoRawPocket4 }
-        if model.family == .nano || model.isPocket3 { return photoRawPocket3AndNano }
-        return photoRawPocket4
+        0x05
     }
 
     public func wireByte(for model: CameraModel?) -> UInt8 {
         self == .photo ? Self.photoWireByte(for: model) : rawValue
     }
 
-    /// Every `0x02/0xE1` value a supported body accepts, including the Nano's Photo `0x05`, which
-    /// has no case of its own because `photo` carries the Pocket 4 encoding `0x17`.
-    ///
-    /// The wire enum is sparse and unordered, so it is tabled and never computed, and nothing
-    /// outside this set may be sent: sweeping the opcode's value space froze a Nano solid and
-    /// needed a power cycle. Panorama `0x0c` is documented but omitted — unconfirmed on hardware.
     public static let tabledRawValues: Set<UInt8> = [
         0x00,  // SlowMo
         0x01,  // Video
         0x02,  // TimeLapse
         0x05,  // Photo (Pocket 3 / Nano)
         0x0A,  // HyperLapse
-        0x17,  // Photo (Pocket 4 / 4 Pro)
         0x28,  // SuperNight / Low-Light video
-        0x4D,  // Live Photo (Pocket 4 Pro)
     ]
 }
 
-/// Choose record vs shutter from the documented mode, not a photo/video boolean.
-///
-/// Pocket 3 TimeLapse start/stop is `0x02/0x01` `01`/`00` (accepted survey). That
-/// mapping is Pocket 3 only — Pocket 4 / 4 Pro TimeLapse stays Video `0x02/0x02`
-/// until a later survey. Motionlapse `0x18` is not tabled.
 public enum CaptureCommand: Sendable {
     public static func frame(
         mode: ShootingMode?,
@@ -120,9 +92,7 @@ public enum CaptureCommand: Sendable {
         if mode?.isPhoto == true {
             return Commands.shootPhoto()
         }
-        if model?.isPocket3 == true, mode?.usesShutterTriggerOnPocket3 == true {
-            return Commands.shutterTrigger(start: !isRecording)
-        }
+
         return isRecording ? Commands.recordStop() : Commands.recordStart()
     }
 }
@@ -196,20 +166,6 @@ public enum GlamourEffect {
     }
 }
 
-/// `0x02/0x8E` pid `0x000F` — Auto ISO **ceiling**, not `IsoIndex`.
-///
-/// Osmosis §14 labeled SET `04` = 100–800, `05` = 100–1600. Pocket 4 Pro GET
-/// replies were `07` and `09`. `camcap_iso_auto_max` publishes the full
-/// ceiling list plus the color-mode base (100 or 400 on 4 Pro):
-///
-/// - Normal / HDR: `02 0b 00 08 02…09 64 00` → `02`–`09`, base 100 (4 Pro)
-/// - D-Log: `02 07 00 04 04…07 90 01` → `04`–`07`, base 400
-/// - D-Log2: `01 01 00 00` → no Auto
-///
-/// Ceiling = `100 << (raw − 1)`. Floor is the body: Pocket 3 / Pocket 4
-/// Rec.709 is 50 (#180 — SET `03` labeled 100–400 is 50–400 on the camera).
-/// Same raw, different base — D-Log `04` is 400–800, not a second opcode.
-/// Do not treat raw as `IsoIndex` (`IsoIndex` `04` is 200).
 public enum IsoLimit: UInt8, CaseIterable, Sendable {
     case max200 = 0x02
     case max400 = 0x03
@@ -473,21 +429,6 @@ public enum IsoIndex: UInt8, CaseIterable, Sendable {
     }
 }
 
-/// `0x02/0x42` color. No GET — `cam_image_effect` `@2`.
-///
-/// `rawValue` is the Pocket 4 / 4 Pro SET byte and the cross-shell semantic
-/// id (JNI colorMode, media cache). Pocket 3 and Nano use a different map —
-/// use `wireByte(for:)` / `fromWire(_:model:)` (#176).
-///
-/// Per body (DJI spec; D-Log2 is Pocket 4 Pro only):
-/// 4 Pro `3F` Normal / `3C` HDR / `17` D-Log / `41` D-Log2.
-/// Pocket 4 `3F` / `3C` / `17` D-Log (no D-Log2).
-/// Pocket 3 `00` Normal / `3C` HDR (HLG) / `3D` D-Log M — `3F` is rejected,
-/// and `00` as D-Log M switched the body to Rec.709 (#176). `17` showed
-/// "colour 4" (#160).
-/// Nano `camcap_color_mode` (Mimo 2026-08-18): `01 04 00 03 00 3F 3D` →
-/// `00` Normal 8-bit / `3F` Normal 10-bit / `3D` D-Log M (same `00`/`3D` as
-/// Pocket 3 Rec.709 / D-Log M; `3F` is Nano 10-bit, not Pocket 4 Normal).
 public enum ColorMode: UInt8, CaseIterable, Sendable {
     case normal = 0x3F
     case hdr = 0x3C
@@ -517,7 +458,6 @@ public enum ColorMode: UInt8, CaseIterable, Sendable {
 
     public func label(for family: CameraBodyFamily) -> String {
         if family == .nano, self == .normal { return "Normal 8-bit" }
-        if family == .pocket, self == .dLogM { return "D-Log M" }
         return label
     }
 
@@ -531,67 +471,33 @@ public enum ColorMode: UInt8, CaseIterable, Sendable {
         }
     }
 
-    /// Family fallback. Pocket 4 Pro is the only body with D-Log2 — use
-    /// `available(for: CameraModel)` when the name is known.
     public static func available(for family: CameraBodyFamily) -> [ColorMode] {
         switch family {
         case .nano: [.normal, .normal10, .dLogM]
-        case .pocket, .other: [.normal, .hdr, .dLog]
+        case .other: []
         }
     }
 
-    /// DJI comparison: 4 Pro D-Log2 / D-Log; Pocket 4 D-Log; Pocket 3 HLG / D-Log M.
-    /// Nano is the captured `camcap_color_mode` wheel. D-Log2 is 4 Pro only.
     public static func available(for model: CameraModel) -> [ColorMode] {
-        if model.family == .nano { return available(for: .nano) }
-        let n = model.name.lowercased().replacingOccurrences(of: " ", with: "")
-        if n.contains("pocket4p") || n.contains("4pro") {
-            return [.normal, .hdr, .dLog, .dLog2]
-        }
-        if n.contains("pocket4") { return [.normal, .hdr, .dLog] }
-        if model.isPocket3 {
-            return [.normal, .hdr, .dLogM]
-        }
-        return available(for: model.family)
+        available(for: model.family)
     }
 
-    /// Pocket 3 / Nano SET / `cam_image_effect` `@2`. Other bodies use `rawValue`.
     public func wireByte(for model: CameraModel?) -> UInt8 {
-        guard let model else { return rawValue }
-        if model.family == .nano {
-            switch self {
-            case .normal: return 0x00
-            case .normal10: return 0x3F
-            case .dLogM: return 0x3D
-            default: return rawValue
-            }
-        }
-        guard model.isPocket3 else { return rawValue }
         switch self {
-        case .normal: return 0x00
-        case .dLogM: return 0x3D
-        default: return rawValue
+        case .normal: 0x00
+        case .normal10: 0x3F
+        case .dLogM: 0x3D
+        default: rawValue
         }
     }
 
-    /// Inverse of `wireByte(for:)`. Unknown body bytes still try `rawValue`.
     public static func fromWire(_ byte: UInt8, model: CameraModel?) -> ColorMode? {
-        if let model, model.family == .nano {
-            switch byte {
-            case 0x00: return .normal
-            case 0x3F: return .normal10
-            case 0x3D: return .dLogM
-            default: break
-            }
+        switch byte {
+        case 0x00: .normal
+        case 0x3F: .normal10
+        case 0x3D: .dLogM
+        default: nil
         }
-        if let model, model.isPocket3 {
-            switch byte {
-            case 0x00: return .normal
-            case 0x3D: return .dLogM
-            default: break
-            }
-        }
-        return ColorMode(rawValue: byte)
     }
 
     /// Indices Mimo offered per color in the labeled take. Do not invent others.
@@ -610,9 +516,6 @@ public enum ColorMode: UInt8, CaseIterable, Sendable {
     /// D-Log2 has no Auto ISO — even if `IsoLimit` grows, this stays false.
     public var offersIsoAuto: Bool { self != .dLog2 }
 
-    /// `camcap_iso_auto_max` base when the body is unknown: 100 Normal/HDR /
-    /// D-Log M (Pocket 4 Pro capture), 400 D-Log. nil = no Auto. Prefer
-    /// `isoAutoBase(for:)` so Pocket 3 / Pocket 4 Rec.709 labels start at 50.
     public var isoAutoBase: Int? { isoAutoBase(for: nil) }
 
     public func isoAutoBase(for model: CameraModel?) -> Int? {
@@ -1143,7 +1046,6 @@ public struct VideoFrameRate: Equatable, Hashable, Sendable {
         .fps24, .fps25, .fps30, .fps48, .fps50, .fps60,
     ]
 
-    /// Osmosis index table, plus Pocket 4 Pro 200 fps from the physical mode survey.
     public static func fps(index: UInt8) -> Int? {
         switch index {
         case 1: 24
@@ -1168,10 +1070,6 @@ public struct VideoFrameRate: Equatable, Hashable, Sendable {
     ]
 }
 
-/// One 5-byte SET: `[res][fps_idx]` plus a 3-byte trailer. No GET — `cam_video_param_v2` `@0–1`.
-///
-/// Normal / Video / Low-Light trailer is `00 00 00`. Captured Pocket 3 / 4 Pro SlowMo:
-/// 100/120/200 uses `00 04 00`; 240 uses `00 08 00`. Default API is the zero trailer.
 public struct VideoFormat: Equatable, Hashable, Sendable {
     public var resolution: VideoResolution
     public var frameRate: VideoFrameRate
@@ -1207,11 +1105,10 @@ public struct VideoFormat: Equatable, Hashable, Sendable {
         }
     }
 
-    /// iOS / JNI call sites: captured SlowMo trailer context for Pocket 3 and Pocket 4 Pro.
     public static func formatSetMode(
         model: CameraModel?, statusMode: ShootingMode?
     ) -> ShootingMode? {
-        (model?.isPocket3 == true || model?.isPocket4Pro == true) ? statusMode : nil
+        nil
     }
 
     /// Top-deck chip, OpenZCine `resolutionFrameRate` shape (`4K · 25p`).
@@ -1226,10 +1123,6 @@ public struct VideoFormat: Equatable, Hashable, Sendable {
             frameRate: VideoFrameRate(rawValue: value[1]))
     }
 
-    /// Other labeled resolution, same fps. Pocket 3 first picture: the FORMAT
-    /// sheet skips a same-tab SET, so 4K→4K never restarts the live encoder.
-    /// Prefer a pair the body advertised (`camcap_video_format`); a guessed
-    /// 1080 30 on a 4K 25 boot is rejected and the poke never retries.
     public static func firstPictureEncoderKick(
         from original: VideoFormat,
         available: [VideoFormat] = []
@@ -2209,7 +2102,6 @@ public enum CamFov {
     public static let lens1x: UInt16 = 217
     /// `@14` at operator 3× (sensor hop / Mimo 3× chip).
     public static let lens3x: UInt16 = 651
-    /// `@14` at operator 6× (lerp 3×→12×). Pocket 4 Pro detent.
     public static let lens6x: UInt16 = 1302
     /// `@14` at operator 12×. SET `0A 4E 2C 0A`.
     public static let lens12x: UInt16 = 2604
@@ -2328,7 +2220,6 @@ public enum CamFov {
         return String(format: "%.1f×", shown)
     }
 
-    /// Cycle through `stops` (default 4 Pro 1×/3×/6×/12×). Pocket 4 is 1×/2×/4×.
     public static func nextJump(from factor: Double, stops: [Double] = jumps) -> Double {
         let stops = stops.isEmpty ? jumps : stops
         for stop in stops where factor < stop - 0.05 { return stop }

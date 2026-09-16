@@ -7,7 +7,7 @@ import XCTest
 final class MultiviewStagePersistenceTests: XCTestCase {
     func testStageRoundTripPreservesSlotsIdentityAndOperatorChoices() throws {
         let camera = MultiviewStageStore.Camera(
-            slot: 2, id: UUID(), name: "OsmoPocket3-Test",
+            slot: 2, id: UUID(), name: "OsmoNano-Test",
             modelId: nil, identity: [0, 4, 84, 101, 115, 116], address: "192.168.1.20",
             experimental: true, lutEnabled: true)
         let stage = MultiviewStageStore.Stage(
@@ -22,10 +22,11 @@ final class MultiviewStagePersistenceTests: XCTestCase {
             CameraModel.resolve(
                 modelId: decoded.cameras[0].modelId,
                 name: decoded.cameras[0].name
-            ).isPocket3)
+            ).family == .nano)
     }
     func testLegacyStageWithoutFitFillStillRestores() throws {
-        let stage = MultiviewStageStore.Stage(ssid: "Test", hotspot: false,
+        let stage = MultiviewStageStore.Stage(
+            ssid: "Test", hotspot: false,
             layout: MultiviewLayout.centerStage.rawValue, focusedIndex: 0, cameras: [])
         let data = try JSONEncoder().encode(stage)
         XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("fill"))
@@ -95,10 +96,13 @@ final class MultiviewStagePersistenceTests: XCTestCase {
                 attempts += 1
                 return attempts > 1
             },
-            saveStage: { journal = $0; return true })
+            saveStage: {
+                journal = $0
+                return true
+            })
         let camera = FoundCamera(
-            id: UUID(), name: "OsmoPocket3-Test",
-            model: .resolve(modelId: nil, name: "OsmoPocket3-Test"), modelId: nil)
+            id: UUID(), name: "OsmoNano-Test",
+            model: .resolve(modelId: nil, name: "OsmoNano-Test"), modelId: nil)
         XCTAssertTrue(session.recordStationChange(camera))
         XCTAssertEqual(journal?.ssid, "")
         XCTAssertEqual(journal?.cameras, [])
@@ -125,10 +129,13 @@ final class MultiviewStagePersistenceTests: XCTestCase {
                 attempts += 1
                 return await withCheckedContinuation { finish = $0 }
             },
-            saveStage: { journal = $0; return true })
+            saveStage: {
+                journal = $0
+                return true
+            })
         let camera = FoundCamera(
-            id: UUID(), name: "OsmoPocket3-Test",
-            model: .resolve(modelId: nil, name: "OsmoPocket3-Test"), modelId: nil)
+            id: UUID(), name: "OsmoNano-Test",
+            model: .resolve(modelId: nil, name: "OsmoNano-Test"), modelId: nil)
         XCTAssertTrue(session.recordStationChange(camera))
         let saved = try XCTUnwrap(journal?.pendingReset?.first)
         let scanCleanup = Task { await session.resetStationOnce(saved) }
@@ -160,8 +167,14 @@ final class MultiviewStagePersistenceTests: XCTestCase {
             pendingReset: [camera])
         var restored: [UUID] = []
         let session = MultiviewSession(
-            resetCamera: { restored.append($0.id); return true },
-            saveStage: { journal = $0; return true })
+            resetCamera: {
+                restored.append($0.id)
+                return true
+            },
+            saveStage: {
+                journal = $0
+                return true
+            })
         session.restoreStage(journal)
         let deadline = Date().addingTimeInterval(2)
         while session.busy, Date() < deadline { await Task.yield() }

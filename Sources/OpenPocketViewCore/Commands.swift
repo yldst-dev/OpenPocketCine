@@ -181,17 +181,10 @@ public enum Commands {
         return camera(0xBF, payload, seq: seq)
     }
 
-    /// Pocket live-view enable target (system type 0x08, id 0).
-    public static let liveViewEnableReceiverPocket: UInt8 = rx(type: 0x08, id: 0)
-    /// Nano live-view enable target. Mimo `mimo-nano-live-20260818`: `rcv=0x41`
-    /// (type 1, id 2). Pocket `0x08` ACKs `E0` on Nano and no pktType-0x02 starts.
     public static let liveViewEnableReceiverNano: UInt8 = 0x41
 
-    /// `0x09/0xa8` **start live view** / IDR. Bytes from Mimo. Pocket `rcv=0x08`;
-    /// Nano must use `liveViewEnableReceiverNano`. Re-sending every second resets
-    /// the encoder GOP and the IDR never lands — that was the black-screen bug.
     public static func liveViewEnable(
-        seq: UInt16, receiver: UInt8 = liveViewEnableReceiverPocket
+        seq: UInt16, receiver: UInt8 = liveViewEnableReceiverNano
     ) -> Duml.Frame {
         Duml.Frame(
             sender: Duml.senderApp, receiver: receiver, seq: seq,
@@ -213,33 +206,20 @@ public enum Commands {
     /// `0x02/0x02` stop recording. Payload `[00]`.
     public static func recordStop(seq: UInt16 = 0) -> Duml.Frame { camera(0x02, [0x00], seq: seq) }
 
-    /// `0x02/0x01` shutter trigger. Payload `[01]`. In Video mode the camera answers `d9`.
-    /// Pocket 3 TimeLapse uses this opcode for start (`01`) and stop (`00`).
     public static func shootPhoto(seq: UInt16 = 0) -> Duml.Frame {
         shutterTrigger(start: true, seq: seq)
     }
 
-    /// `0x02/0x01` start (`01`) or stop (`00`). Photo fires `01`. Pocket 3 TimeLapse uses both.
     public static func shutterTrigger(start: Bool, seq: UInt16 = 0) -> Duml.Frame {
         camera(0x01, [start ? 0x01 : 0x00], seq: seq)
     }
 
-    /// `0x02/0xE1` shooting mode. Only send tabled `ShootingMode` values — do not enumerate.
-    /// Photo is body-specific: Pocket 3 / Nano `0x05`, Pocket 4 / 4 Pro `0x17`. `model: nil`
-    /// keeps the historic Photo `0x17` payload.
     public static func setShootingMode(
         _ mode: ShootingMode, model: CameraModel? = nil, seq: UInt16 = 0
     ) -> Duml.Frame {
         camera(0xE1, [mode.wireByte(for: model)], seq: seq)
     }
 
-    /// `0x02/0xE1` from a raw wire value, for callers that carry the byte rather than the case —
-    /// Photo is body-dependent (`0x17` on a Pocket 4, `0x05` on a Pocket 3 / Nano), and only one
-    /// of those can be `ShootingMode.photo`.
-    ///
-    /// Returns nil for anything outside `ShootingMode.tabledRawValues`. That refusal is the point:
-    /// sweeping this opcode's value space froze a Nano solid and needed a power cycle, so an
-    /// unrecognised mode must never reach the wire.
     public static func setShootingMode(raw: UInt8, seq: UInt16 = 0) -> Duml.Frame? {
         guard ShootingMode.tabledRawValues.contains(raw) else { return nil }
         return camera(0xE1, [raw], seq: seq)
@@ -366,9 +346,6 @@ public enum Commands {
         camera(0x2A, [index.rawValue], seq: seq)
     }
 
-    /// `0x02/0x42` color. Pocket 4 uses `ColorMode.rawValue`; Pocket 3 and Nano
-    /// use `wireByte(for:)` (Pocket 3 `00` Normal / `3C` HDR / `3D` D-Log M;
-    /// Nano `00` Normal 8-bit / `3F` Normal 10-bit / `3D` D-Log M).
     public static func setColorMode(
         _ mode: ColorMode, model: CameraModel? = nil, seq: UInt16 = 0
     ) -> Duml.Frame {
@@ -544,7 +521,8 @@ public enum Commands {
             duration >= 0.1, duration <= 25.5,
             abs(duration * 10 - (duration * 10).rounded()) < 1e-6
         else { return nil }
-        let payload = le16(Int((yawDeg * 10).rounded())) + [0, 0]
+        let payload =
+            le16(Int((yawDeg * 10).rounded())) + [0, 0]
             + le16(Int((nativePitchDeg * 10).rounded())) + [0x05, UInt8((duration * 10).rounded())]
         return gimbal(0x14, payload, seq: seq, flags: Duml.flagNotify)
     }
@@ -555,8 +533,10 @@ public enum Commands {
     ) -> Duml.Frame? {
         guard waypoint.pitchDeg.isFinite,
             (HeadTrack.Reach.tiltMinDeg...HeadTrack.Reach.tiltMaxDeg).contains(waypoint.pitchDeg),
-            let nativePitch = waypoint.nativePitchDeg else { return nil }
-        return gimbalTimedTarget(yawDeg: waypoint.yawDeg, nativePitchDeg: nativePitch,
+            let nativePitch = waypoint.nativePitchDeg
+        else { return nil }
+        return gimbalTimedTarget(
+            yawDeg: waypoint.yawDeg, nativePitchDeg: nativePitch,
             duration: duration, seq: seq)
     }
 

@@ -400,7 +400,7 @@ struct CapturePickerPanel: View {
                     from: model.session.status, model: connectedBody
                 ).first(where: {
                     $0.label(for: connectedBody) == label
-                }), mode != .livePhoto {
+                }) {
                     model.session.setShootingMode(mode)
                 }
             }
@@ -1118,9 +1118,7 @@ enum CaptureLists {
     static func operatorShootingModes(
         from status: CameraStatus = CameraStatus(), model: CameraModel? = nil
     ) -> [ShootingMode] {
-        ShootingMode.allCases.filter {
-            $0 != .livePhoto || ShootingMode.fromStatus(status.shootingMode) == .livePhoto
-        }
+        ShootingMode.allCases
     }
 
     static func recordingCategories(isPhoto: Bool) -> [CaptureSheet] {
