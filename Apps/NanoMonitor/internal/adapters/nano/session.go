@@ -40,6 +40,7 @@ type session struct {
 	identityRequested bool
 	registered        bool
 	enabled           bool
+	gateStarted       bool
 	report            func(string)
 }
 
@@ -124,7 +125,7 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 		}
 	}()
 	defer func() {
-		if s.enabled {
+		if s.gateStarted {
 			_, _ = s.send(previewGate(false))
 		}
 	}()
@@ -138,8 +139,9 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 	defer watchdog.Stop()
 	startup := time.NewTimer(15 * time.Second)
 	defer startup.Stop()
-	var handshaken, windowReady bool
-	var enableAt time.Time
+	var handshaken, windowReady, statusSeen bool
+	var enableAt, gateDeadline time.Time
+	var gateSequence uint16
 	sends := 0
 	sendHandshake := func() error {
 		sends++
@@ -183,21 +185,33 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 			}
 		case now := <-watchdog.C:
 			if !s.enabled && !enableAt.IsZero() && !now.Before(enableAt) {
-				if err := s.enable(now); err != nil {
+				seq, err := s.send(previewGate(true))
+				if err != nil {
 					return err
 				}
+				s.gateStarted = true
+				gateSequence = seq
+				gateDeadline = now.Add(3 * time.Second)
+				enableAt = time.Time{}
 				startup.Stop()
 				c.Report("영상 수신을 기다립니다. 다른 모니터나 DJI Mimo의 연결은 종료해 주세요.")
 			}
-			if s.enabled {
+			if !gateDeadline.IsZero() && !now.Before(gateDeadline) {
+				return errors.New("Nano의 미리보기 준비 응답을 받지 못했습니다")
+			}
+			if s.enabled && gateDeadline.IsZero() {
 				switch domain.Recovery(now, s.lastEnable, s.lastPicture, !s.gate.ready, s.recoveries) {
 				case domain.RequestPicture:
 					s.recoveries++
 					s.healthySince = time.Time{}
 					c.Report("영상이 멈춰 새 화면을 요청합니다.")
-					if err := s.enable(now); err != nil {
+					seq, err := s.send(previewGate(true))
+					if err != nil {
 						return err
 					}
+					s.gateStarted = true
+					gateSequence = seq
+					gateDeadline = now.Add(3 * time.Second)
 				case domain.StopStream:
 					return errors.New("영상 복구 2회가 실패했습니다. 카메라와 공유기 연결을 확인한 뒤 다시 실행해 주세요")
 				}
@@ -227,6 +241,10 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 				continue
 			}
 			for _, f := range scanFrames(p[8:]) {
+				if !statusSeen && f.set == 2 && f.id == 0x80 && len(f.payload) >= 13 {
+					statusSeen = true
+					c.Report(fmt.Sprintf("카메라 상태: playback=%t recording=%t", le.Uint32(f.payload)&0x40000000 != 0, le.Uint32(f.payload)&0x80 != 0))
+				}
 				if f.flags&0x80 == 0 {
 					continue
 				}
@@ -255,8 +273,17 @@ func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identi
 					enableAt = time.Now().Add(300 * time.Millisecond)
 					c.Report("Nano 형식의 기기 이름을 확인했습니다. 미리보기를 시작합니다.")
 				}
+				if !gateDeadline.IsZero() && f.set == 2 && f.id == 9 && f.seq == gateSequence && len(f.payload) > 0 {
+					if f.payload[0] != 0 {
+						return fmt.Errorf("Nano가 미리보기 준비를 거부했습니다(0x%02x)", f.payload[0])
+					}
+					gateDeadline = time.Time{}
+					if err := s.enable(time.Now()); err != nil {
+						return err
+					}
+				}
 				if s.enabled && f.set == 9 && f.id == 0xa8 && f.seq == s.enableSequence && len(f.payload) > 0 && f.payload[0] != 0 {
-					return fmt.Errorf("Nano가 미리보기를 거부했습니다(0x%02x). 카메라의 재생 화면을 닫고 Video 모드에서 다시 실행해 주세요", f.payload[0])
+					return fmt.Errorf("Nano가 미리보기를 거부했습니다(0x%02x). 다른 카메라 앱 연결과 카메라 상태를 확인해 주세요", f.payload[0])
 				}
 			}
 		}
@@ -286,9 +313,6 @@ func (s *session) send(f frame) (uint16, error) {
 }
 
 func (s *session) enable(now time.Time) error {
-	if _, err := s.send(previewGate(true)); err != nil {
-		return err
-	}
 	seq, err := s.send(enablePreview())
 	if err != nil {
 		return err

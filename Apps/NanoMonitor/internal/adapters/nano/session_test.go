@@ -14,16 +14,18 @@ import (
 )
 
 type testCamera struct {
-	udp      *net.UDPConn
-	tcp      net.Listener
-	mu       sync.Mutex
-	commands []frame
-	acks     int
-	packets  int
-	video    []byte
+	udp        *net.UDPConn
+	tcp        net.Listener
+	mu         sync.Mutex
+	commands   []frame
+	acks       int
+	packets    int
+	gateWait   <-chan struct{}
+	gateStatus byte
+	video      []byte
 }
 
-func serveCamera(t *testing.T, name string, video []byte) *testCamera {
+func serveCamera(t *testing.T, name string, video []byte, configure ...func(*testCamera)) *testCamera {
 	t.Helper()
 	udp, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
 	if err != nil {
@@ -35,6 +37,9 @@ func serveCamera(t *testing.T, name string, video []byte) *testCamera {
 		t.Fatal(err)
 	}
 	fake := &testCamera{udp: udp, tcp: tcp, video: video}
+	for _, option := range configure {
+		option(fake)
+	}
 	t.Cleanup(func() { udp.Close(); tcp.Close() })
 	go func() {
 		conn, err := tcp.Accept()
@@ -85,6 +90,16 @@ func serveCamera(t *testing.T, name string, video []byte) *testCamera {
 					fake.commands = append(fake.commands, f)
 					fake.mu.Unlock()
 					reply := frame{sender: f.receiver, receiver: 2, flags: 0xc0, set: f.set, id: f.id, seq: f.seq, payload: []byte{0}}
+					if f.set == 2 && f.id == 9 && f.payload[10] == 3 {
+						reply.payload = []byte{fake.gateStatus}
+						if fake.gateWait != nil {
+							go func(reply frame, sid uint16, peer *net.UDPAddr) {
+								<-fake.gateWait
+								udp.WriteToUDP(packet(3, sid, 0, encodeFrame(reply)), peer)
+							}(reply, sid, peer)
+							continue
+						}
+					}
 					if f.set == 7 && f.id == 7 {
 						reply.payload = append([]byte{0, byte(len(name))}, name...)
 					}
@@ -210,5 +225,63 @@ func TestSessionReturnsTCPFailureBeforeUDP(t *testing.T) {
 	defer fake.mu.Unlock()
 	if fake.packets != 0 {
 		t.Fatal("UDP session started after TCP failure")
+	}
+}
+
+func TestPreviewWaitsForGateAcknowledgement(t *testing.T) {
+	ready := make(chan struct{})
+	fake := serveCamera(t, "OsmoNano-TEST", nil, func(f *testCamera) { f.gateWait = ready })
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- fake.adapter().Stream(ctx, make(chan domain.AccessUnit, 8)) }()
+	deadline := time.Now().Add(2 * time.Second)
+	var found bool
+	for time.Now().Before(deadline) {
+		fake.mu.Lock()
+		for _, command := range fake.commands {
+			if command.set == 9 && command.id == 0xa8 {
+				t.Error("enable preceded gate acknowledgement")
+			}
+			if command.set == 2 && command.id == 9 {
+				found = true
+			}
+		}
+		fake.mu.Unlock()
+		if found {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	time.Sleep(50 * time.Millisecond)
+	fake.mu.Lock()
+	for _, command := range fake.commands {
+		if command.set == 9 && command.id == 0xa8 {
+			t.Error("enable preceded gate acknowledgement")
+		}
+	}
+	fake.mu.Unlock()
+	close(ready)
+	if !found {
+		t.Error("gate request missing")
+	}
+	cancel()
+	<-done
+}
+
+func TestPreviewStopsOnGateRejection(t *testing.T) {
+	fake := serveCamera(t, "OsmoNano-TEST", nil, func(f *testCamera) { f.gateStatus = 0xe0 })
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := fake.adapter().Stream(ctx, make(chan domain.AccessUnit, 8))
+	if err == nil || !strings.Contains(err.Error(), "준비를 거부") {
+		t.Fatalf("got %v", err)
+	}
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	for _, command := range fake.commands {
+		if command.set == 9 && command.id == 0xa8 {
+			t.Fatal("enable followed rejected gate")
+		}
 	}
 }

@@ -150,7 +150,9 @@ three ACK windows and Nano access-unit framing:
 - Open UDP 9004 from an ephemeral local port bound to the selected interface.
 - Wait for both handshake and initial telemetry before selecting command sequence.
 - Check the camera-name reply before device registration and subscriptions.
-- Send Nano gate `0x02/0x09` and enable `0x09/0xa8` to receiver `0x41` once.
+- Send Nano gate `0x02/0x09`, wait up to 3 seconds for its matching success
+  reply, then send enable `0x09/0xa8` to receiver `0x41` once. Recovery enables
+  use the same gate acknowledgement barrier.
 - ACK at 40 Hz, with independent video, command-reply and extra cursors.
 - Assemble complete declared-length frames across transport group boundaries.
 - Remove Nano private AVC metadata by length, preserving normal AVC NAL units.
@@ -164,7 +166,7 @@ session, it does not automatically rebuild the UDP endpoint or re-provision
 Wi-Fi after recovery exhaustion.
 
 Every access unit is capped at 4 MiB. The application handoff holds at most
-8 units; receiver and diagnostic queues are also bounded. Overload stops the
+32 units to accommodate player startup bursts; receiver and diagnostic queues are also bounded. Overload stops the
 session rather than silently dropping dependent AVC pictures. FFplay decodes
 and displays the video; received pictures do not prove presentation timing.
 
@@ -192,7 +194,13 @@ NANO_MONITOR_REAL_PLAYER=1 go test ./internal/adapters/ffplay -run '^TestActualF
 ```
 
 Physical Bluetooth provisioning reached an accepted join response. The macOS
-app bundle subsequently verified the Nano identity over the router LAN. The
-camera rejected preview with status `0xd6`; real playback and AP restoration
-remain unverified. The earlier Mac iPad-app
+app bundle verified Nano identity over the router LAN and displayed real AVC
+video in FFplay. Waiting for the gate reply removed a reproducible `0xd6`
+rejection despite non-playback camera status. A 32-unit bounded handoff replaced
+the 8-unit queue that overflowed during player startup. This is a short desktop
+check, not a long-run or latency qualification. AP restoration remains unverified. The earlier Mac iPad-app
 connection confirmation does not qualify this separate Go implementation.
+
+During the initial physical check, playback later stopped after recovery and
+an input-queue overflow. The first picture is verified; sustained playback
+still needs qualification after the recovery gate barrier change.

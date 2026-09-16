@@ -81,7 +81,12 @@ Its README describes the domain, application ports and platform adapters.
 ## Validation scope
 
 The automated checks cover framing, fragmented video, recovery policy,
-cancellation and subprocess handling. Physical Nano-on-router validation is
-still required; the earlier Mac iPad-app confirmation is not proof of this Go
-viewer. The program exits after bounded recovery instead of silently leaving
+cancellation and subprocess handling. A short physical Nano-on-router run displayed real AVC video through the
+macOS app bundle. Long-run stability, latency and AP restoration are still
+unverified. The viewer waits for the camera’s preview preparation reply before
+sending the enable command. The program exits after bounded recovery instead of silently leaving
 an apparently healthy frozen session.
+
+During the initial physical check, playback later stopped after recovery and
+an input-queue overflow. The first picture is verified; sustained playback
+still needs qualification after the recovery gate barrier change.

@@ -18,7 +18,7 @@ type Display interface {
 func Monitor(ctx context.Context, camera Camera, display Display) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	frames := make(chan domain.AccessUnit, 8)
+	frames := make(chan domain.AccessUnit, 32)
 	sourceDone := make(chan error, 1)
 	go func() {
 		err := camera.Stream(runCtx, frames)

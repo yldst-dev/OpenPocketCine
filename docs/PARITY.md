@@ -28,8 +28,10 @@ it through FFplay. Its macOS-only setup pairs over native CoreBluetooth,
 provisions WPA2 credentials from a secure dialog and requires matching LAN
 identity before success. Other platforms remain viewer-only. It exposes no
 shooting controls. Bluetooth provisioning reached an accepted join response, and the native
-macOS app bundle verified the Nano identity over the router LAN. Preview then
-returned `0xd6`; real Go playback and AP restoration remain unverified. The
+macOS app bundle verified the Nano identity over the router LAN. The Go viewer displayed real Nano AVC video after waiting for the preview
+gate acknowledgement and accommodating player startup bursts. This short
+desktop check does not qualify long-run stability or latency. AP restoration
+remains unverified. The
 bundle provides normal macOS permission attribution; early route failures stay
 alive for 20 seconds to allow the system prompt to appear. Its reduced recovery policy stops after bounded
 preview retries. Mobile feature parity is intentionally out of scope, and
@@ -874,3 +876,7 @@ The active-link status card is visible in both orientations. Supported settings
 retain their existing actions and saved values; Android still uses system Back.
 Sharing and platform-specific hardware/settings remain capability differences.
 iOS is unchanged in this Android visual correction.
+
+During the initial physical check, playback later stopped after recovery and
+an input-queue overflow. The first picture is verified; sustained playback
+still needs qualification after the recovery gate barrier change.
