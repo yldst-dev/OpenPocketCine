@@ -223,7 +223,9 @@ Native secure dialogs supply credentials without a password flag or cache.
 The viewer can also use a camera whose provisioning has already finished.
 It reads and validates the camera name on the selected LAN endpoint before
 registration and preview. It sends no shooting-setting, recording or media
-commands. The only recovery owner is the viewer's bounded preview watchdog.
+commands. The Nano adapter owns recovery: the watchdog permits bounded picture requests,
+then the stream wrapper permits at most 2 fresh identity-pinned sessions without
+closing the display channel. It does not retry identity or arbitrary failures.
 The narrower desktop scope and pending physical qualification are recorded in
 [parity](PARITY.md#local-mac-validation).
 

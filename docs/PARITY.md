@@ -37,8 +37,10 @@ that subjective result is not a measured or zero camera-to-screen latency claim.
 desktop check does not qualify long-run stability or latency. AP restoration
 remains unverified. The
 bundle provides normal macOS permission attribution; early route failures stay
-alive for 20 seconds to allow the system prompt to appear. Its reduced recovery policy stops after bounded
-preview retries. Mobile feature parity is intentionally out of scope, and
+alive for 20 seconds to allow the system prompt to appear. Its recovery policy allows 2 picture requests per session and, after
+exhaustion, up to 2 fresh identity-checked sessions while preserving FFplay.
+Late retransmissions cannot rewind video/reply ACK cursors or invalidate the
+current picture. Actual forward gaps still require resynchronization. Mobile feature parity is intentionally out of scope, and
 physical shared-LAN verification is separate from the Mac iPad-app check.
 
 The iOS app can be built locally for an Apple silicon Mac using the Designed

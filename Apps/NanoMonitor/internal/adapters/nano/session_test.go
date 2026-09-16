@@ -285,3 +285,46 @@ func TestPreviewStopsOnGateRejection(t *testing.T) {
 		}
 	}
 }
+
+func TestReconnectPreviewIsBoundedAndDoesNotRetryFatalErrors(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		failure error
+		want    int
+	}{
+		{"stalled", errPreviewStalled, 3},
+		{"fatal", errors.New("identity mismatch"), 1},
+		{"closed", nil, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := 0
+			err := reconnectPreview(context.Background(), func() error { calls++; return tc.failure }, nil)
+			if calls != tc.want || !errors.Is(err, tc.failure) {
+				t.Fatalf("calls=%d error=%v", calls, err)
+			}
+		})
+	}
+}
+
+func TestReconnectPreviewCancellationStopsBackoff(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	calls := 0
+	err := reconnectPreview(ctx, func() error { calls++; return errPreviewStalled }, func(string) { cancel() })
+	if calls != 1 || !errors.Is(err, context.Canceled) {
+		t.Fatalf("calls=%d error=%v", calls, err)
+	}
+}
+
+func TestReconnectPreviewKeepsSuccessfulReplacementRunning(t *testing.T) {
+	calls := 0
+	err := reconnectPreview(context.Background(), func() error {
+		calls++
+		if calls == 1 {
+			return errPreviewStalled
+		}
+		return nil
+	}, nil)
+	if err != nil || calls != 2 {
+		t.Fatalf("calls=%d error=%v", calls, err)
+	}
+}

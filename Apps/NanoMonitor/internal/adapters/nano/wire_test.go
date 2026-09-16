@@ -99,3 +99,15 @@ func FuzzWire(f *testing.F) {
 		_, _ = cameraName(data)
 	})
 }
+
+func TestLatePacketsDoNotRewindAckWindowsAcrossWrap(t *testing.T) {
+	var w windows
+	for _, kind := range []byte{2, 3} {
+		for _, sequence := range []uint16{0xfff0, 0xfff8, 0, 8, 0xfff0, 0} {
+			w.observe(packet(kind, 1, sequence, nil))
+		}
+	}
+	if w.video != 8 || w.data != 8 {
+		t.Fatalf("old packets rewound ACK cursors: %+v", w)
+	}
+}

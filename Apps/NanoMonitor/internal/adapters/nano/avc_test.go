@@ -127,3 +127,23 @@ func FuzzAVC(f *testing.F) {
 		_, _ = a.feed(data)
 	})
 }
+
+func TestLateRetransmissionDoesNotDiscardCurrentPicture(t *testing.T) {
+	want := bytes.Repeat([]byte{0x65}, 4000)
+	packets := videoPackets(want, 0xfff0, 1000)
+	var a assembler
+	for i, p := range packets {
+		got, lost := a.feed(p)
+		if lost {
+			t.Fatal("contiguous data marked lost")
+		}
+		if i > 0 {
+			if old, lost := a.feed(packets[0]); old != nil || lost {
+				t.Fatal("old retransmission discarded current picture")
+			}
+		}
+		if i == len(packets)-1 && !bytes.Equal(got, want) {
+			t.Fatal("picture did not survive retransmission across sequence wrap")
+		}
+	}
+}

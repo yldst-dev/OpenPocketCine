@@ -84,8 +84,10 @@ The automated checks cover framing, fragmented video, recovery policy,
 cancellation and subprocess handling. A short physical Nano-on-router run displayed real AVC video through the
 macOS app bundle. Long-run stability, latency and AP restoration are still
 unverified. The viewer waits for the camera’s preview preparation reply before
-sending the enable command. The program exits after bounded recovery instead of silently leaving
-an apparently healthy frozen session.
+sending the enable command. After 2 unsuccessful picture requests, the program preserves the player and
+tries a fresh, identity-checked connection. At most 2 new connections are
+allowed per run; exhaustion still ends with an error. It does not change Wi-Fi
+settings. Old retransmissions no longer rewind ACKs or discard a current frame.
 
 The player uses packet-arrival timestamps, skips stream-info probing and uses
 1 decoding thread. Its compressed-frame queue holds at most 8 units. It does

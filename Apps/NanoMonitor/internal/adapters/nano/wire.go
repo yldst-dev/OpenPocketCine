@@ -185,14 +185,19 @@ func (w *windows) observe(p []byte) {
 			}
 			if !w.hasData {
 				w.data = le.Uint16(p[18:20])
-				w.hasData = true
 			}
 			w.extra = le.Uint16(p[26:28])
 		}
 	case 2:
-		w.video, w.hasVideo = le.Uint16(p[4:6]), true
+		seq := le.Uint16(p[4:6])
+		if !w.hasVideo || sequenceAfter(seq, w.video) {
+			w.video, w.hasVideo = seq, true
+		}
 	case 3:
-		w.data, w.hasData = le.Uint16(p[4:6]), true
+		seq := le.Uint16(p[4:6])
+		if !w.hasData || sequenceAfter(seq, w.data) {
+			w.data, w.hasData = seq, true
+		}
 	}
 }
 
@@ -203,4 +208,9 @@ func (w windows) payload() []byte {
 		le.PutUint16(b[i*8+2:], v)
 	}
 	return b
+}
+
+func sequenceAfter(next, previous uint16) bool {
+	distance := next - previous
+	return distance != 0 && distance < 0x8000
 }

@@ -159,11 +159,22 @@ three ACK windows and Nano access-unit framing:
 - Wait for SPS/PPS plus IDR initially and after a packet gap.
 
 The watchdog allows 8 seconds after each enable and observes picture-input
-stalls. It makes at most 2 recovery enables, then exits with an error. Healthy
-input for 30 seconds resets this budget. It never sends periodic keyframe
-requests merely because the previous keyframe is old. Unlike the full mobile
-session, it does not automatically rebuild the UDP endpoint or re-provision
-Wi-Fi after recovery exhaustion.
+stalls. It makes at most 2 recovery enables within a session. Healthy input for
+30 seconds resets that budget. If recovery is exhausted, it keeps the display
+process and opens a fresh TCP/UDP session after 1 second, rechecking the pinned
+camera identity before preview. At most 2 fresh sessions are attempted per run;
+cancellation, identity failures and unrelated errors are not blindly retried.
+Exhausting that bound exits with an explicit error. It never sends periodic
+keyframe requests merely because the previous keyframe is old and does not
+re-provision Wi-Fi during recovery.
+
+Late or duplicate video packets are ignored without discarding the current
+picture. Video and reply ACK cursors cannot move backward on retransmissions,
+including across 16-bit sequence wrap. Genuine forward gaps still require IDR
+resynchronization. Recovery messages include loss and ignored-packet counts.
+A reported window closure was traced to the old recovery-exhaustion exit, not
+an observed OS crash. Late-packet handling defects are covered by regression
+tests; the earlier log cannot prove which packet triggered that incident.
 
 Every access unit is capped at 4 MiB. The application handoff holds at most
 8 units for short scheduling bursts; receiver and diagnostic queues are also bounded. Overload stops the

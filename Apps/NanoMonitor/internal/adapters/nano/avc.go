@@ -8,10 +8,11 @@ import (
 )
 
 type assembler struct {
-	expected int
-	buffer   []byte
-	last     uint16
-	hasLast  bool
+	expected    int
+	buffer      []byte
+	last        uint16
+	hasLast     bool
+	latePackets uint64
 }
 
 func (a *assembler) reset() {
@@ -25,7 +26,8 @@ func (a *assembler) feed(p []byte) ([]byte, bool) {
 		return nil, false
 	}
 	seq := le.Uint16(p[4:6])
-	if a.hasLast && seq == a.last {
+	if a.hasLast && !sequenceAfter(seq, a.last) {
+		a.latePackets++
 		return nil, false
 	}
 	lost := a.hasLast && seq != a.last+8
