@@ -87,6 +87,9 @@ unverified. The viewer waits for the camera’s preview preparation reply before
 sending the enable command. The program exits after bounded recovery instead of silently leaving
 an apparently healthy frozen session.
 
-During the initial physical check, playback later stopped after recovery and
-an input-queue overflow. The first picture is verified; sustained playback
-still needs qualification after the recovery gate barrier change.
+The player uses packet-arrival timestamps, skips stream-info probing and uses
+1 decoding thread. Its compressed-frame queue holds at most 8 units. It does
+not replay received data against an invented recording timeline or discard
+H.264 reference frames to catch up. Late decoded pictures can be dropped.
+The operator confirmed near-immediate response in the physical check. The
+synthetic burst test checks backlog drainage, not camera-to-screen delay.

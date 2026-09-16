@@ -166,7 +166,7 @@ session, it does not automatically rebuild the UDP endpoint or re-provision
 Wi-Fi after recovery exhaustion.
 
 Every access unit is capped at 4 MiB. The application handoff holds at most
-32 units to accommodate player startup bursts; receiver and diagnostic queues are also bounded. Overload stops the
+8 units for short scheduling bursts; receiver and diagnostic queues are also bounded. Overload stops the
 session rather than silently dropping dependent AVC pictures. FFplay decodes
 and displays the video; received pictures do not prove presentation timing.
 
@@ -187,7 +187,8 @@ go test ./internal/adapters/nano -run '^$' -fuzz FuzzWire -fuzztime 10s
 go test ./internal/adapters/nano -run '^$' -fuzz FuzzAVC -fuzztime 10s
 ```
 
-An optional FFmpeg/FFplay integration check opens a 10-second synthetic video:
+An optional FFmpeg/FFplay integration check feeds a 10-second synthetic burst
+and requires it to drain within 5 seconds instead of replaying an old timeline:
 
 ```sh
 NANO_MONITOR_REAL_PLAYER=1 go test ./internal/adapters/ffplay -run '^TestActualFFplay$' -count=1 -v
@@ -196,11 +197,21 @@ NANO_MONITOR_REAL_PLAYER=1 go test ./internal/adapters/ffplay -run '^TestActualF
 Physical Bluetooth provisioning reached an accepted join response. The macOS
 app bundle verified Nano identity over the router LAN and displayed real AVC
 video in FFplay. Waiting for the gate reply removed a reproducible `0xd6`
-rejection despite non-playback camera status. A 32-unit bounded handoff replaced
-the 8-unit queue that overflowed during player startup. This is a short desktop
-check, not a long-run or latency qualification. AP restoration remains unverified. The earlier Mac iPad-app
-connection confirmation does not qualify this separate Go implementation.
+rejection despite non-playback camera status. Earlier runs with file-style
+playback timing accumulated latency and eventually overflowed the input queue.
 
-During the initial physical check, playback later stopped after recovery and
-an input-queue overflow. The first picture is verified; sustained playback
-still needs qualification after the recovery gate barrier change.
+The live player now uses packet-arrival timestamps rather than generated
+recording timestamps, skips stream-info probing, disables AVIO read-ahead and
+uses 1 decoder thread. The compressed handoff is reduced from 32 to 8 units;
+frames needed for H.264 prediction are not discarded. Late decoded frames may
+be dropped by FFplay. A 2-unit trial was not retained because short scheduling
+bursts could terminate the session. Overload still stops explicitly rather than
+silently accumulating unbounded latency.
+
+On this host, the 10-second synthetic burst test took about 10.45 seconds with
+the previous settings and 1.28 seconds with the live settings, including test
+setup. This is a backlog-drain comparison, not camera-to-screen latency.
+Physical video display is verified, and the operator reported near-immediate
+response to camera movement after the live-player changes. This is subjective
+confirmation, not a millisecond measurement. Long-run stability, measured
+glass-to-glass latency and AP restoration remain unqualified.

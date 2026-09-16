@@ -29,7 +29,11 @@ func TestActualFFplay(t *testing.T) {
 	frames := make(chan domain.AccessUnit, 1)
 	frames <- domain.AccessUnit{Data: data}
 	close(frames)
+	started := time.Now()
 	if err := player.Play(ctx, frames); err != nil {
 		t.Fatal(err)
+	}
+	if elapsed := time.Since(started); elapsed > 5*time.Second {
+		t.Fatalf("buffered video was paced as an old recording: %v", elapsed)
 	}
 }

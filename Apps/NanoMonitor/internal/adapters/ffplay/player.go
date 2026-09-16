@@ -27,8 +27,9 @@ func (p *Player) Play(ctx context.Context, frames <-chan domain.AccessUnit) erro
 	defer cancel()
 	cmd := exec.CommandContext(runCtx, p.path,
 		"-hide_banner", "-loglevel", "error", "-autoexit", "-an", "-sn",
-		"-fflags", "+genpts+discardcorrupt", "-flags", "low_delay", "-framedrop", "-sync", "ext",
-		"-probesize", "32768", "-analyzeduration", "0", "-window_title", "Osmo Nano Monitor",
+		"-fflags", "+discardcorrupt", "-flags", "low_delay", "-threads", "1",
+		"-nofind_stream_info", "-avioflags", "direct", "-use_wallclock_as_timestamps", "1",
+		"-framedrop", "-sync", "ext", "-window_title", "Osmo Nano Monitor",
 		"-f", "h264", "-i", "pipe:0")
 	cmd.WaitDelay = time.Second
 	logs := &limitedLog{}

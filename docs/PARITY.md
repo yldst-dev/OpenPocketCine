@@ -29,7 +29,11 @@ provisions WPA2 credentials from a secure dialog and requires matching LAN
 identity before success. Other platforms remain viewer-only. It exposes no
 shooting controls. Bluetooth provisioning reached an accepted join response, and the native
 macOS app bundle verified the Nano identity over the router LAN. The Go viewer displayed real Nano AVC video after waiting for the preview
-gate acknowledgement and accommodating player startup bursts. This short
+gate acknowledgement. The desktop player uses arrival timestamps, skips
+stream-info probing and AVIO read-ahead, uses 1 decoder thread and bounds the
+compressed handoff at 8 units. This avoids the previous generated recording
+timeline. The operator confirmed near-immediate response after this change;
+that subjective result is not a measured or zero camera-to-screen latency claim. This short
 desktop check does not qualify long-run stability or latency. AP restoration
 remains unverified. The
 bundle provides normal macOS permission attribution; early route failures stay
@@ -876,7 +880,3 @@ The active-link status card is visible in both orientations. Supported settings
 retain their existing actions and saved values; Android still uses system Back.
 Sharing and platform-specific hardware/settings remain capability differences.
 iOS is unchanged in this Android visual correction.
-
-During the initial physical check, playback later stopped after recovery and
-an input-queue overflow. The first picture is verified; sustained playback
-still needs qualification after the recovery gate barrier change.
