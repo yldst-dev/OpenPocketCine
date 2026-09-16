@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -79,6 +80,8 @@ func Discover(ctx context.Context, lan LAN) ([]netip.Addr, error) {
 	jobs := make(chan netip.Addr)
 	var mu sync.Mutex
 	var candidates []netip.Addr
+	blocked := 0
+	var pathError error
 	var workers sync.WaitGroup
 	for range min(24, len(hosts)) {
 		workers.Go(func() {
@@ -89,6 +92,12 @@ func Discover(ctx context.Context, lan LAN) ([]netip.Addr, error) {
 					conn.Close()
 					mu.Lock()
 					candidates = append(candidates, address)
+					mu.Unlock()
+				} else if errors.Is(err, syscall.EHOSTUNREACH) || errors.Is(err, syscall.ENETUNREACH) ||
+					errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EADDRNOTAVAIL) {
+					mu.Lock()
+					blocked++
+					pathError = err
 					mu.Unlock()
 				}
 			}
@@ -107,6 +116,9 @@ func Discover(ctx context.Context, lan LAN) ([]netip.Addr, error) {
 	workers.Wait()
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
+	}
+	if len(hosts) > 0 && blocked == len(hosts) {
+		return nil, fmt.Errorf("모든 로컬 연결이 네트워크 경로 또는 권한 오류로 실패했습니다. 네트워크 장치와 macOS의 로컬 네트워크 접근 권한을 확인해 주세요: %w", pathError)
 	}
 	sort.Slice(candidates, func(i, j int) bool { return candidates[i].Less(candidates[j]) })
 	return candidates, nil

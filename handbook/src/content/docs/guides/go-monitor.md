@@ -4,16 +4,33 @@ description: Video-only Osmo Nano monitoring on a shared IPv4 network.
 ---
 
 `Apps/NanoMonitor/` is an independent Go module. It receives Nano AVC preview
-and opens a video-only FFplay window. Swift, Xcode, an Apple development account
-and the mobile apps are not needed to build or run the viewer.
+and opens a video-only FFplay window. The viewer does not depend on the mobile apps. macOS Bluetooth setup uses
+CoreBluetooth and requires Xcode Command Line Tools with cgo enabled; it does
+not require an Apple development account. Other platforms support viewing
+already configured cameras with `CGO_ENABLED=0`.
 
 ## Prepare the camera
 
-Nano must already be connected to the same WPA2 router as the computer. The
-viewer does not configure the camera's Wi-Fi or pair it over Bluetooth. Initial
-station-mode setup is described in the experimental
-[Multiview guide](../multiview-prototype/). A direct connection to the Nano's
-own Wi-Fi is different from putting the Nano on a shared router.
+Connect the computer to the target WPA2 router, attach Nano to its powered
+vision dock and finish initial DJI Mimo activation if needed. Disconnect Mimo.
+On macOS, configure the camera from the repository root:
+
+```sh
+just nano-monitor setup -list
+just nano-monitor setup -interface en0 -monitor
+```
+
+Use the router-connected interface. With several cameras, add `-device` using
+the listed name or Bluetooth ID. Enter the network name and password in the
+native dialogs, then approve Nano's connection request if shown. The password
+is hidden and is not saved in command arguments, logs or files.
+
+Setup checks the same Nano on the LAN before opening the viewer. If its address
+is known from the router, add `-camera 192.168.10.42`. A failed check can leave
+Nano in station mode: check client isolation, the interface and macOS Local
+Network permission. To request its own Wi-Fi again, run
+`just nano-monitor setup -restore-ap` and verify restoration on Nano. A request
+acceptance is not proof that the mode change completed.
 
 Keep Nano in Video mode and disconnect other camera apps. If Multiview was used
 for provisioning, remove the tile before closing that workflow so the camera

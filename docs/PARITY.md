@@ -23,9 +23,13 @@ incomplete.
 ## Local Mac validation
 
 The independent Go viewer in `Apps/NanoMonitor/` is a separate desktop utility,
-not another mobile shell. It only receives Nano preview on an already configured
-shared LAN and displays it through FFplay. It does not provision camera Wi-Fi
-or expose shooting controls. Its reduced recovery policy stops after bounded
+not another mobile shell. It receives Nano preview on a shared LAN and displays
+it through FFplay. Its macOS-only setup pairs over native CoreBluetooth,
+provisions WPA2 credentials from a secure dialog and requires matching LAN
+identity before success. Other platforms remain viewer-only. It exposes no
+shooting controls. Bluetooth discovery and a join request were exercised;
+router joining, AP restoration and real Go playback remain unverified because
+LAN verification hit host-local route errors. Its reduced recovery policy stops after bounded
 preview retries. Mobile feature parity is intentionally out of scope, and
 physical shared-LAN verification is separate from the Mac iPad-app check.
 

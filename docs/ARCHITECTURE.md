@@ -216,7 +216,11 @@ and bounded handoff; its adapters own DUML networking, Nano AVC parsing, LAN
 discovery and the FFplay process. Only the composition root selects concrete
 adapters. The Go module has no external Go packages.
 
-The viewer assumes that camera station-mode provisioning has already finished.
+The setup use case owns provisioning and identity-verified LAN location ports.
+Its domain validates network credentials; the Nano adapter owns pairing and
+station-mode DUML, while a thin macOS Objective-C/cgo adapter owns CoreBluetooth.
+Native secure dialogs supply credentials without a password flag or cache.
+The viewer can also use a camera whose provisioning has already finished.
 It reads and validates the camera name on the selected LAN endpoint before
 registration and preview. It sends no shooting-setting, recording or media
 commands. The only recovery owner is the viewer's bounded preview watchdog.

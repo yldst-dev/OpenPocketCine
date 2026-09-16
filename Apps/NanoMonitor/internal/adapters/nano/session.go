@@ -44,6 +44,14 @@ type session struct {
 }
 
 func (c Camera) Stream(ctx context.Context, frames chan<- domain.AccessUnit) error {
+	return c.run(ctx, frames, false)
+}
+
+func (c Camera) Verify(ctx context.Context) error {
+	return c.run(ctx, nil, true)
+}
+
+func (c Camera) run(ctx context.Context, frames chan<- domain.AccessUnit, identifyOnly bool) error {
 	if !c.Address.Is4() || !c.LocalAddress.Is4() {
 		return errors.New("카메라와 로컬 IPv4 주소가 필요합니다")
 	}
@@ -234,6 +242,9 @@ func (c Camera) Stream(ctx context.Context, frames chan<- domain.AccessUnit) err
 						if name != c.ExpectedName {
 							return errors.New("응답한 카메라가 -name으로 지정한 Nano와 다릅니다")
 						}
+					}
+					if identifyOnly {
+						return nil
 					}
 					for _, message := range []frame{deviceInfo(), presence(), subscription("cam_status", 0x69df), subscription("cam_video_param_v2", 0x69e0)} {
 						if _, err := s.send(message); err != nil {

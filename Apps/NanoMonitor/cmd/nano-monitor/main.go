@@ -27,6 +27,9 @@ func main() {
 }
 
 func run(ctx context.Context, args []string, out, log io.Writer) error {
+	if len(args) > 0 && args[0] == "setup" {
+		return setup(ctx, args[1:], out, log)
+	}
 	flags := flag.NewFlagSet("nano-monitor", flag.ContinueOnError)
 	flags.SetOutput(log)
 	address := flags.String("camera", "", "Nano의 공유기 IPv4 주소. 생략하면 같은 대역을 검색합니다")

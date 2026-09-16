@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>com.opencapture.nanomonitor</string>
+  <key>CFBundleName</key>
+  <string>Nano Monitor</string>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>Osmo Nano를 찾아 공유기에 연결하도록 설정합니다.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>같은 네트워크의 Osmo Nano를 확인하고 영상을 수신합니다.</string>
+</dict>
+</plist>

@@ -8,16 +8,51 @@ at build time or runtime. The complete folder can be copied into another repo.
 
 - Go 1.26 or newer to build; this module has no third-party Go dependencies.
 - FFplay on `PATH`, or an executable path supplied with `-ffplay`.
-- Nano already provisioned onto the same WPA2 router as the computer.
+- Nano on the same WPA2 router as the computer after setup.
 - A private IPv4 network that allows direct communication between clients.
 - Nano in normal Video mode, with other camera monitoring apps disconnected.
 
-Joining the computer to a router does not put the Nano on that router. Initial
-camera network provisioning is a separate Bluetooth operation, available in
-the parent project's experimental iPhone Multiview workflow. This viewer does
-not perform that operation or store a Wi-Fi password. The existing Mac
-single-camera app's direct Nano connection is not evidence that station mode
-has been configured.
+On macOS, `setup` provisions the Nano over Bluetooth using native CoreBluetooth.
+This build requires Xcode Command Line Tools and cgo; no Apple development
+account or third-party Go package is required. Other platforms can build the
+viewer with `CGO_ENABLED=0`, but cannot run Bluetooth setup.
+
+## Connect Nano to a router
+
+Attach Nano to its powered vision dock, finish first activation in DJI Mimo,
+then disconnect Mimo and other camera apps. Connect the computer to the target
+WPA2 router and run:
+
+```sh
+just build
+./bin/nano-monitor setup -list
+./bin/nano-monitor setup -interface en0 -monitor
+```
+
+Select the router-connected interface for this computer. If several cameras
+appear, add `-device` with the exact name or Bluetooth ID from the list. Enter
+the router name and password in the native dialogs. Approve a connection request
+on Nano if shown. Password input is hidden and is not written to arguments,
+logs or files. Temporary Go credential buffers are cleared after use; this is
+not a guarantee that every OS-managed memory copy has been erased.
+
+Setup pairs, requests station mode, supplies the router credentials and checks
+the same camera name over the LAN before reporting success. A join response
+alone does not prove connectivity. `-monitor` opens the viewer only after that
+check. A missing join response still allows bounded LAN verification.
+
+If the router already lists the camera, add `setup -camera 192.168.10.42` to
+skip subnet discovery. A failed LAN check may leave Nano in station mode. Check
+client isolation, the selected interface and macOS Local Network permission
+before repeating setup. All-host route or permission failures are reported
+separately from an empty candidate list. If necessary, request its own Wi-Fi:
+
+```sh
+./bin/nano-monitor setup -restore-ap
+```
+
+Verify restoration on the camera and in the computer's Wi-Fi list. The command
+confirms acceptance of the request, not successful AP restoration.
 
 Only 1 monitoring client should use a Nano at a time. Starting another client
 may take over the camera's unicast preview. If using Multiview to provision the
@@ -75,6 +110,7 @@ disk, change exposure, capture photos, or start/stop camera recording.
 | Application | `internal/application` | Camera/display ports, bounded handoff and cancellation |
 | Camera adapter | `internal/adapters/nano` | DUML, UDP windows, session setup, Nano AVC assembly |
 | Network adapter | `internal/adapters/network` | Interface selection and bounded LAN discovery |
+| Bluetooth and secret adapters | `internal/adapters/bluetooth`, `internal/adapters/secret` | Native macOS transport and secure input |
 | Display adapter | `internal/adapters/ffplay` | FFplay process and its input pipe |
 | Composition root | `cmd/nano-monitor` | Flags, signals and dependency wiring |
 
@@ -133,5 +169,7 @@ An optional FFmpeg/FFplay integration check opens a 10-second synthetic video:
 NANO_MONITOR_REAL_PLAYER=1 go test ./internal/adapters/ffplay -run '^TestActualFFplay$' -count=1 -v
 ```
 
-Physical Nano-on-router validation is still required. The earlier Mac iPad-app
+Physical Bluetooth discovery and a router-join request were exercised. The LAN
+verification failed with host-local route errors, so successful router joining,
+AP restoration and real camera playback remain unverified. The earlier Mac iPad-app
 connection confirmation does not qualify this separate Go implementation.

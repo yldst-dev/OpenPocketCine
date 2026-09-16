@@ -173,3 +173,21 @@ func TestSessionCancellationDuringStartup(t *testing.T) {
 		t.Fatalf("startup ignored cancellation: %v", err)
 	}
 }
+
+func TestVerifyDoesNotStartPreview(t *testing.T) {
+	fake := serveCamera(t, "OsmoNano-TEST", nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	camera := fake.adapter()
+	camera.ExpectedName = "OsmoNano-TEST"
+	if err := camera.Verify(ctx); err != nil {
+		t.Fatal(err)
+	}
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	for _, f := range fake.commands {
+		if f.set != 7 || f.id != 7 {
+			t.Fatal("identity check changed camera preview")
+		}
+	}
+}
